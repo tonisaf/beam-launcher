@@ -206,7 +206,7 @@
     <string name="app_buttons">App buttons</string>
     <string name="settings_button">Settings button</string>
     <string name="layout_classic">Like the Switch</string>
-    <string name="interface">Interface</string>
+    <string name="interface_section">Interface</string>
     <string name="picture">Picture</string>
     <string name="game_mode_section">Game mode · for HDMI</string>
     <string name="sound_mode">Sound mode</string>

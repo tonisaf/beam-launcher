@@ -503,7 +503,7 @@ private fun ColumnScope.SubPage(page: PanelPage, first: FocusRequester, onDismis
             if (SoundOutput.available) SoundOutputSection()
             SoundModeSection()
             EarcToggle()
-            Section(stringResource(R.string.interface))
+            Section(stringResource(R.string.interface_section))
             Toggle(stringResource(R.string.navigation_sounds), LauncherSettings.sounds, Modifier.fillMaxWidth()) {
                 LauncherSettings.sounds = !LauncherSettings.sounds
             }

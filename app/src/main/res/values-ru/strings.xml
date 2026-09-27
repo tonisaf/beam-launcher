@@ -205,7 +205,7 @@
     <string name="app_buttons">Кнопки приложений</string>
     <string name="settings_button">Кнопка настроек</string>
     <string name="layout_classic">Как на Switch</string>
-    <string name="interface">Интерфейс</string>
+    <string name="interface_section">Интерфейс</string>
     <string name="picture">Изображение</string>
     <string name="game_mode_section">Игровой режим · для HDMI</string>
     <string name="sound_mode">Звуковой режим</string>
