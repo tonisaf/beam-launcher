@@ -1,129 +1,137 @@
 # Beam
 
-Домашний экран (лаунчер) для проектора **XGIMI Play 6** (Android 11), написанный на Jetpack Compose. Он заменяет
-стоковую оболочку XGIMI с китайскими сервисами и рекламой. Прошивку при этом не трогает: всё
-ставится и откатывается через adb.
+**English** | [Русский](README.ru.md)
 
-Интерфейс только на русском.
+A home screen (launcher) for the **XGIMI Play 6** projector (Android 11), built with Jetpack Compose.
+It replaces XGIMI's stock shell with its Chinese services and ads. The firmware itself is left
+alone: everything is installed and rolled back over adb.
 
-> Неофициальный проект, никак не связанный с XGIMI. Сделан только для XGIMI Play 6 на Android 11.
-> На других моделях XGIMI функции проектора (яркость, трапеция, фокус, батарея) могут не работать,
-> другие устройства не поддерживаются.
+The interface is in English and Russian and follows the system language. Voice commands are
+Russian only.
 
-## Что умеет
+> An unofficial project, not affiliated with XGIMI. Made for the XGIMI Play 6 on Android 11 only.
+> On other XGIMI models the projector functions (brightness, keystone, focus, battery) may not
+> work; other devices are not supported.
 
-- **Главный экран**: ряд плиток приложений, упорядоченных по частоте использования, плитки HDMI и
-  накопителя. Под ними второй ряд с каналами других приложений (подписки SmartTube, недавнее в
-  Spotify, «Продолжить просмотр»). Ещё есть виджет «Сейчас играет» и заряд батареи проектора.
-- **Панель быстрых настроек** поверх любого приложения, открывается голосовой кнопкой пульта:
-  изображение, звук, оформление, Bluetooth (в том числе поиск и сопряжение колонок), заставка,
-  питание и таймер сна, проекция, трапеция и размер картинки, настройки XGIMI.
-- **Кнопки приложений на пульте**: четыре кнопки, которые прошивка жёстко привязала к китайским
-  видеосервисам, можно назначить на любое приложение, панель или «домой».
-- **Голосовой поиск офлайн** на [Vosk](https://alphacephei.com/vosk/) (малая русская модель).
-- Оформление: светлая и тёмная темы, фоны, в том числе анимированный в стиле PS3 XMB, звуки
-  интерфейса.
+## Features
 
-## Установка
+- **Home screen**: a row of app tiles ordered by how often you use them, plus HDMI and USB drive
+  tiles. Below it, a second row with other apps' channels (SmartTube subscriptions, recent Spotify,
+  “Continue watching”). Also a “Now playing” widget and the projector's battery level.
+- **Quick settings panel** over any app, opened with the remote's voice key: picture, sound,
+  appearance, Bluetooth (including finding and pairing speakers), screensaver, power and sleep
+  timer, projection, keystone and picture size, XGIMI settings.
+- **App buttons on the remote**: the four buttons the firmware hard-wires to Chinese video
+  services can be assigned to any app, the panel or “home”.
+- **Offline voice search** with [Vosk](https://alphacephei.com/vosk/) (small Russian model).
+- Look: light and dark themes, backgrounds including an animated one in the style of the PS3 XMB,
+  interface sounds.
 
-Нужны компьютер с [adb](https://developer.android.com/tools/releases/platform-tools) и проектор в
-той же сети.
+## Installation
 
-1. Включите на проекторе режим разработчика и отладку по сети (ADB). Отключите VPN на компьютере,
-   иначе adb не достучится до проектора.
-2. Соберите APK (см. [Сборка](#сборка)). Сборки из CI неделю хранятся в артефактах на вкладке
-   Actions.
-3. Запустите из корня репозитория (Windows PowerShell):
+You need a computer with [adb](https://developer.android.com/tools/releases/platform-tools) and the
+projector on the same network.
+
+1. Turn on developer mode and network debugging (ADB) on the projector. Turn off any VPN on the
+   computer, or adb won't reach the projector.
+2. Build the APKs (see [Building](#building)). CI builds are kept for a week as artifacts on the
+   Actions tab.
+3. From the repository root, run (Windows PowerShell):
 
    ```powershell
-   .\tools\restore.ps1 -Device 192.168.1.50 -Reboot
+   .\tools\restore.ps1 -Device 192.168.1.50 -Language en-US -TimeZone Europe/London -Reboot
    ```
 
-   Скрипт можно запускать повторно. Шаги для отсутствующих приложений пропускаются. APK, которые
-   нужно поставить заодно (SmartTube, LeanKey…), положите в `tools\apks\`.
+   The script is safe to run again. Steps whose app is missing are skipped. APKs to install along
+   the way (SmartTube, LeanKey…) go into `tools\apks\`. The script's own messages are in Russian.
 
-### Что меняет `restore.ps1`
+### What `restore.ps1` changes
 
-Прочитайте до запуска:
+Read this before running it:
 
-- устанавливает Beam и заглушки кнопок пульта (см. ниже);
-- **отключает** (`pm disable-user`, без удаления) стоковый лаунчер `com.xgimi.home`, клавиатуру
-  Sogou, рекламу, телеметрию, отправку отчётов, китайский магазин, голосовые и IoT-сервисы XGIMI.
-  Полный список в скрипте, раздел 2;
-- делает LeanKey системной клавиатурой, если она установлена;
-- выдаёт Beam права через adb: статистика использования, доступ к уведомлениям (для «Сейчас
-  играет»), каналы ТВ, `WRITE_SECURE_SETTINGS`, местоположение (для поиска Bluetooth-устройств),
-  изменение системных настроек;
-- включает службу специальных возможностей Beam: она ловит голосовую кнопку и рисует панель
-  поверх приложений. Прошивка сбрасывает её при загрузке, Beam включает её обратно сам;
-- делает Beam домашним экраном;
-- ставит русский язык, часовой пояс **Europe/Moscow** и Bluetooth-имя «XGIMI Play 6». Если вам
-  нужно другое, поправьте раздел 6 скрипта.
+- installs Beam and the remote button stubs (see below);
+- **disables** (`pm disable-user`, nothing is uninstalled) the stock launcher `com.xgimi.home`, the
+  Sogou keyboard, ads, telemetry, bug report uploads, the Chinese app store, and XGIMI's voice and
+  IoT services. The full list is in section 2 of the script;
+- makes LeanKey the system keyboard if it is installed;
+- grants Beam permissions over adb: usage stats, notification access (for “Now playing”), TV
+  channels, `WRITE_SECURE_SETTINGS`, location (for finding Bluetooth devices), changing system
+  settings;
+- enables Beam's accessibility service: it catches the voice key and draws the panel over apps.
+  The firmware resets it on boot; Beam turns it back on by itself;
+- makes Beam the home screen;
+- sets the system language (`-Language`, default `ru-RU`; Beam's interface follows it), the time
+  zone (`-TimeZone`, default `Europe/Moscow`) and the Bluetooth name “XGIMI Play 6”.
 
-### Откат
+### Rolling back
 
 ```sh
-adb shell pm enable com.xgimi.home          # и остальные пакеты из раздела 2 restore.ps1
+adb shell pm enable com.xgimi.home          # and the other packages from section 2 of restore.ps1
 adb uninstall com.home.tiles
-adb uninstall com.cibn.tv                   # заглушки кнопок пульта
+adb uninstall com.cibn.tv                   # the remote button stubs
 adb uninstall com.ktcp.tvvideo
 adb uninstall com.gitvjimi.video
 adb uninstall com.hunantv.license
 ```
 
-После перезагрузки домашним экраном снова будет стоковый лаунчер.
+After a reboot the stock launcher is the home screen again.
 
-### Заглушки кнопок пульта
+### Remote button stubs
 
-Прошивка обрабатывает четыре кнопки приложений на пульте сама и запускает фиксированные китайские
-приложения по имени пакета. Модуль `stub` собирает четыре крошечных APK **с этими именами
-пакетов** (`com.cibn.tv`, `com.ktcp.tvvideo`, `com.gitvjimi.video`, `com.hunantv.license`). Они
-ничего не делают, кроме передачи нажатия в Beam. Если на проекторе установлены настоящие
-приложения с этими именами, заглушки не встанут.
+The firmware handles the remote's four app buttons itself and launches fixed Chinese apps by
+package name. The `stub` module builds four tiny APKs **with those package names**
+(`com.cibn.tv`, `com.ktcp.tvvideo`, `com.gitvjimi.video`, `com.hunantv.license`). All they do is
+pass the press on to Beam. If the real apps with those names are installed on the projector, the
+stubs won't install.
 
-### Голосовая модель
+### Voice model
 
-Модель Vosk (~45 МБ) не входит в APK. Beam скачивает её при первом использовании голосовой кнопки
-с `alphacephei.com`. Без интернета на проекторе её можно залить через adb, как описано в
+The Vosk model (~45 MB) is not in the APK. Beam downloads it from `alphacephei.com` the first time
+the voice key is used. Without internet on the projector it can be pushed over adb, as described in
 `VoiceModelProvider` (`app/src/main/java/com/home/tiles/Voice.kt`).
 
-## Сборка
+## Building
 
-Нужны JDK 17 и Android SDK (путь в `ANDROID_HOME` или `local.properties`).
+You need JDK 17 and the Android SDK (its path in `ANDROID_HOME` or `local.properties`).
 
 ```sh
 ./gradlew :app:assembleRelease :stub:assembleRelease
 ```
 
-APK появятся в `app/build/outputs/apk/release/` и `stub/build/outputs/apk/*/release/`. Релиз
-подписывается debug-ключом вашего компьютера. Поэтому APK, собранный на другом компьютере (или
-скачанный из CI), не встанет поверх вашего: сначала удалите старый.
+The APKs end up in `app/build/outputs/apk/release/` and `stub/build/outputs/apk/*/release/`. The
+release build is signed with your computer's debug key, so an APK built on another computer (or
+downloaded from CI) won't install over yours: uninstall the old one first.
 
-### Быстрая установка при разработке
+### Quick install while developing
 
 ```sh
-cp local.env.example local.env   # впишите IP проектора (и пути, если adb не в PATH)
-./deploy.sh                      # собрать и поставить Beam
-./deploy.sh --stubs              # заодно заглушки кнопок пульта
-./deploy.sh --no-start           # не выводить Beam на экран после установки
+cp local.env.example local.env   # fill in the projector's IP (and paths if adb isn't on PATH)
+./deploy.sh                      # build and install Beam
+./deploy.sh --stubs              # also the remote button stubs
+./deploy.sh --no-start           # don't bring Beam to the front after installing
 ```
 
-`local.env` в git не попадает. Его читают и `deploy.sh`, и `tools/restore.ps1`.
+`local.env` stays out of git. Both `deploy.sh` and `tools/restore.ps1` read it.
 
-### Как Beam управляет проектором
+### Translations
 
-Какие сервисы, классы и настройки прошивки XGIMI вызывает Beam и что в ней не работает так, как
-ожидается: [docs/xgimi-firmware.md](docs/xgimi-firmware.md).
+Interface text lives in `app/src/main/res/values/strings.xml` (English, the default) and
+`values-ru/strings.xml` (Russian). Another language is one more `values-xx/strings.xml`.
 
-### Команды для отладки
+### How Beam drives the projector
+
+Which XGIMI firmware services, classes and settings Beam calls, and what in the firmware doesn't
+work as you'd expect: [docs/xgimi-firmware.md](docs/xgimi-firmware.md).
+
+### Debug commands
 
 ```sh
 adb shell am broadcast -n com.home.tiles/.AdbCommandReceiver --es background XMB --ez bg_animation true
 adb shell am broadcast -n com.home.tiles/.AdbCommandReceiver --es bt_name "XGIMI Play 6"
-adb shell am start -n com.home.tiles/.MicTestActivity --ei seconds 6   # проверка микрофона пульта
+adb shell am start -n com.home.tiles/.MicTestActivity --ei seconds 6   # remote microphone test
 ```
 
-## Лицензия
+## License
 
-[MIT](LICENSE). Проект распространяется «как есть», без гарантий: `restore.ps1` меняет системные
-настройки проектора, запускайте его на свой риск.
+[MIT](LICENSE). Provided “as is”, without warranty: `restore.ps1` changes the projector's system
+settings, run it at your own risk.
