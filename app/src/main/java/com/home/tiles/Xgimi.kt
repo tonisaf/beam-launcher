@@ -74,15 +74,15 @@ object Xgimi {
         )
     }
 
-    /** Picture modes this model lists, in XGIMI's order, with the numbers its settings app sends. */
+    /** Picture modes this model lists, in XGIMI's order: name resource and the number its settings app sends. */
     val pictureModes = listOf(
-        "AI-изображение" to 16,
-        "Кино" to 1,
-        "Спорт" to 9,
-        "ТВ" to 7,
-        "Пользовательский" to 3,
-        "Офис" to 25,
-        "Производительность" to PICTURE_PERFORMANCE,
+        R.string.picture_ai to 16,
+        R.string.picture_cinema to 1,
+        R.string.picture_sport to 9,
+        R.string.picture_tv to 7,
+        R.string.picture_custom to 3,
+        R.string.picture_office to 25,
+        R.string.picture_performance to PICTURE_PERFORMANCE,
     )
 
     /** Brightest mode: drives the light source harder; XGIMI warns about heat before enabling it. */
@@ -109,7 +109,7 @@ object Xgimi {
 
     private fun startService(context: Context, intent: Intent) {
         val started = runCatching { context.startService(intent) != null }.getOrDefault(false)
-        if (!started) Toast.makeText(context, "Недоступно на этом проекторе", Toast.LENGTH_SHORT).show()
+        if (!started) Toast.makeText(context, R.string.unavailable_on_projector, Toast.LENGTH_SHORT).show()
     }
 
     /** [device]: the CEC name of what is plugged in, when it gave one. */
@@ -140,7 +140,7 @@ object Xgimi {
         val plain = Intent(Intent.ACTION_VIEW, uri).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         runCatching { context.startActivity(xgimi) }
             .recoverCatching { context.startActivity(plain) }
-            .onFailure { Toast.makeText(context, "Не удалось переключить вход", Toast.LENGTH_SHORT).show() }
+            .onFailure { Toast.makeText(context, R.string.input_switch_failed, Toast.LENGTH_SHORT).show() }
     }
 
     private const val HDMI_PLAYER = "com.xgimi.xhplayer"

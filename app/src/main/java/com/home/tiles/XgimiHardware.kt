@@ -548,13 +548,14 @@ object Sensors {
  * granted over adb (tools/restore.ps1).
  */
 object ScreensaverTimeout {
+    /** Timeout in ms and the string resource naming it. */
     val options = listOf(
-        Int.MAX_VALUE to "Никогда",
-        60_000 to "1 мин",
-        300_000 to "5 мин",
-        600_000 to "10 мин",
-        1_800_000 to "30 мин",
-        3_600_000 to "1 час",
+        Int.MAX_VALUE to R.string.timeout_never,
+        60_000 to R.string.timeout_1_min,
+        300_000 to R.string.timeout_5_min,
+        600_000 to R.string.timeout_10_min,
+        1_800_000 to R.string.timeout_30_min,
+        3_600_000 to R.string.timeout_1_hour,
     )
 
     fun current(context: Context): Int =
@@ -569,7 +570,14 @@ object ScreensaverTimeout {
 
 /** XGIMI's sound modes (GmAudioManager.set/getSoundeffect), numbered as its settings page sets them. */
 object SoundMode {
-    val modes = listOf(3 to "AI", 1 to "Кино", 2 to "Музыка", 12 to "Спорт", 4 to "Караоке")
+    /** Mode number and the string resource naming it. */
+    val modes = listOf(
+        3 to R.string.sound_ai,
+        1 to R.string.sound_cinema,
+        2 to R.string.sound_music,
+        12 to R.string.sound_sport,
+        4 to R.string.sound_karaoke,
+    )
 
     private fun call(name: String, vararg args: Any): Any? = runCatching {
         val c = Class.forName("com.xgimi.gmpf.api.GmAudioManager")

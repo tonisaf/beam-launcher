@@ -102,10 +102,13 @@ fun rememberTvChannels(refreshKey: Any): State<List<TvChannel>> {
     }
 }
 
+/** SmartTube names its subscriptions channel in the system language. */
+private val SMARTTUBE_SUBSCRIPTIONS = setOf("org.smarttube.stable|Подписки", "org.smarttube.stable|Subscriptions")
+
 /** The channel chosen for the second row; "auto" prefers SmartTube subscriptions. */
 fun pickSecondRow(channels: List<TvChannel>, setting: String): TvChannel? = when (setting) {
     SECOND_ROW_OFF -> null
-    SECOND_ROW_AUTO -> channels.firstOrNull { it.key == "org.smarttube.stable|Подписки" && it.items.isNotEmpty() }
+    SECOND_ROW_AUTO -> channels.firstOrNull { it.key in SMARTTUBE_SUBSCRIPTIONS && it.items.isNotEmpty() }
         ?: channels.firstOrNull { it.key == WATCH_NEXT_KEY }
         ?: channels.firstOrNull { it.items.isNotEmpty() }
     else -> channels.firstOrNull { it.key == setting }
@@ -143,7 +146,7 @@ fun queryTvChannels(context: Context): List<TvChannel> {
         }
     }
     val watchNextItems = watchNext.sortedByDescending { it.first }.map { it.second }.clean()
-    if (watchNextItems.isNotEmpty()) result += TvChannel(WATCH_NEXT_KEY, "Продолжить просмотр", watchNextItems)
+    if (watchNextItems.isNotEmpty()) result += TvChannel(WATCH_NEXT_KEY, context.getString(R.string.watch_next), watchNextItems)
 
     val channels = mutableListOf<Triple<Long, String, String>>() // id, package, name
     // TvProvider rejects selection/sort arguments from non-system callers, so filter here.

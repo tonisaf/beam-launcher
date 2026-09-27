@@ -17,7 +17,7 @@ class AdbCommandReceiver : BroadcastReceiver() {
         LauncherSettings.init(context)
         // Appearance, for testing without the remote: --es background XMB, --ez bg_animation false
         intent.getStringExtra("background")?.let { name ->
-            val index = Backgrounds.indexOfFirst { it.name.equals(name, ignoreCase = true) }
+            val index = Backgrounds.indexOfFirst { it.key.equals(name, ignoreCase = true) }
             if (index >= 0) LauncherSettings.background = index
             resultData = if (index >= 0) "ok" else "unknown background"
         }

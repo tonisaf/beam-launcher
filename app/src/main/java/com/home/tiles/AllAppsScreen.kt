@@ -27,6 +27,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -53,7 +54,7 @@ fun AllAppsScreen(
 
     Column(Modifier.fillMaxSize().padding(start = 64.dp, end = 64.dp, top = 36.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            T("Все приложения", 36.sp, weight = FontWeight.Light)
+            T(stringResource(R.string.all_apps), 36.sp, weight = FontWeight.Light)
             Spacer(Modifier.width(20.dp))
             T("${apps.size}", 24.sp, color = Colors.TextDim)
             Spacer(Modifier.weight(1f))

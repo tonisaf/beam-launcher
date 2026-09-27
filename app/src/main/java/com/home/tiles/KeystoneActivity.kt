@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -48,7 +49,7 @@ class KeystoneActivity : ComponentActivity() {
         corners = Keystone.corners()
         zoom.intValue = Keystone.savedZoom(this)
         if (Sensors.realtimeKeystone() == true) {
-            message.value = "Включена «Коррекция при сдвиге»: если сдвинуть проектор, настройка пересчитается"
+            message.value = getString(R.string.keystone_realtime_on)
         }
         setContent { Screen(STEPS[step.intValue], zoom.intValue, message.value) }
     }
@@ -129,7 +130,7 @@ class KeystoneActivity : ComponentActivity() {
                 if (target == Step.SHIFT) {
                     val moved = values.mapIndexed { i, v -> v + if (i % 2 == 0) dx * pixels else dy * pixels }
                     if (moved.chunked(2).any { (x, y) -> x !in 0 until Keystone.WIDTH || y !in 0 until Keystone.HEIGHT }) {
-                        message.value = "Сдвигать некуда: сначала уменьшите размер"
+                        message.value = getString(R.string.keystone_no_room)
                         return
                     }
                     apply(moved)
@@ -151,7 +152,7 @@ class KeystoneActivity : ComponentActivity() {
             Keystone.saveZoom(this, next)
             corners = Keystone.corners() ?: corners
         }
-        if (announce) message.value = "Размер ${sizePercent(zoom.intValue)}%"
+        if (announce) message.value = getString(R.string.keystone_size_percent, sizePercent(zoom.intValue))
     }
 
     private fun apply(values: List<Int>) {
@@ -161,14 +162,15 @@ class KeystoneActivity : ComponentActivity() {
         }
     }
 
-    enum class Step(val title: String, val hint: String, val corner: Int = -1) {
-        TOP_LEFT("Левый верхний угол", "Стрелки двигают угол", 0),
-        TOP_RIGHT("Правый верхний угол", "Стрелки двигают угол", 1),
-        BOTTOM_RIGHT("Правый нижний угол", "Стрелки двигают угол", 3),
-        BOTTOM_LEFT("Левый нижний угол", "Стрелки двигают угол", 2),
-        SHIFT("Сдвиг", "Стрелки двигают картинку целиком"),
-        SIZE("Размер", "← → уменьшить или увеличить"),
-        TILT("Наклон", "← → повернуть на 0,5°"),
+    /** [title] and [hint] are string resources. */
+    enum class Step(val title: Int, val hint: Int, val corner: Int = -1) {
+        TOP_LEFT(R.string.keystone_top_left, R.string.keystone_hint_corner, 0),
+        TOP_RIGHT(R.string.keystone_top_right, R.string.keystone_hint_corner, 1),
+        BOTTOM_RIGHT(R.string.keystone_bottom_right, R.string.keystone_hint_corner, 3),
+        BOTTOM_LEFT(R.string.keystone_bottom_left, R.string.keystone_hint_corner, 2),
+        SHIFT(R.string.keystone_shift, R.string.keystone_hint_shift),
+        SIZE(R.string.keystone_size, R.string.keystone_hint_size),
+        TILT(R.string.keystone_tilt, R.string.keystone_hint_tilt),
     }
 
     companion object {
@@ -219,9 +221,9 @@ private fun Screen(step: KeystoneActivity.Step, zoom: Int, message: String?) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            T(step.title, 30.sp, color = Color.White)
+            T(stringResource(step.title), 30.sp, color = Color.White)
             Spacer(Modifier.height(8.dp))
-            T(step.hint, 18.sp, color = Color(0xFFD3E3FD))
+            T(stringResource(step.hint), 18.sp, color = Color(0xFFD3E3FD))
             if (step == KeystoneActivity.Step.SIZE) {
                 Spacer(Modifier.height(6.dp))
                 T("${sizePercent(zoom)}%", 22.sp, color = Mark)
@@ -235,7 +237,7 @@ private fun Screen(step: KeystoneActivity.Step, zoom: Int, message: String?) {
                 T(it, 16.sp, color = Mark)
                 Spacer(Modifier.height(8.dp))
             }
-            T("OK — дальше   ·   Громкость — размер   ·   Назад — готово", 18.sp, color = Color.White)
+            T(stringResource(R.string.keystone_keys), 18.sp, color = Color.White)
         }
     }
 }

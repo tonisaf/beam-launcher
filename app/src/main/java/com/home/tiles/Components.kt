@@ -66,6 +66,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -347,11 +348,11 @@ fun OptionsDialog(entry: AppEntry, repo: AppRepository, onDismiss: () -> Unit, o
     val art by rememberArt(repo, entry)
     val first = remember { FocusRequester() }
     val options = buildList<Pair<String, () -> Unit>> {
-        add("Открыть" to { context.launchApp(entry) })
-        add((if (entry.pinned) "Открепить" else "Закрепить первым") to { repo.togglePinned(entry.pkg); onChanged() })
-        add((if (entry.hidden) "Показать на главном" else "Скрыть с главного") to { repo.toggleHidden(entry.pkg); onChanged() })
-        add("О приложении" to { context.openAppInfo(entry.pkg) })
-        if (!entry.isSystem) add("Удалить" to { context.uninstall(entry.pkg) })
+        add(stringResource(R.string.app_open) to { context.launchApp(entry) })
+        add(stringResource(if (entry.pinned) R.string.app_unpin else R.string.app_pin_first) to { repo.togglePinned(entry.pkg); onChanged() })
+        add(stringResource(if (entry.hidden) R.string.app_show_home else R.string.app_hide_home) to { repo.toggleHidden(entry.pkg); onChanged() })
+        add(stringResource(R.string.app_info) to { context.openAppInfo(entry.pkg) })
+        if (!entry.isSystem) add(stringResource(R.string.app_uninstall) to { context.uninstall(entry.pkg) })
     }
     Dialog(onDismissRequest = onDismiss) {
         Column(

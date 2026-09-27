@@ -51,6 +51,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -66,9 +67,10 @@ private val RowPad = 14.dp
 /** One tile in the home row. Special tiles (drive, HDMI) come before the apps. */
 internal sealed class RowItem(val key: String, val title: String, val subtitle: String = "") {
     class App(val entry: AppEntry) : RowItem(entry.pkg, entry.label)
-    class Usb(val drive: UsbDrive) : RowItem("usb:${drive.key}", "Флешка", drive.label)
-    class Hdmi(val input: Xgimi.Input) : RowItem("hdmi:${input.id}", input.label, if (input.device != null) "HDMI" else "Подключено устройство")
-    class All(count: Int) : RowItem("__all__", "Все приложения", "Приложений: $count")
+    class Usb(val drive: UsbDrive, title: String) : RowItem("usb:${drive.key}", title, drive.label)
+    /** [unnamed]: subtitle for a device that didn't give its name over HDMI-CEC. */
+    class Hdmi(val input: Xgimi.Input, unnamed: String) : RowItem("hdmi:${input.id}", input.label, if (input.device != null) "HDMI" else unnamed)
+    class All(title: String, subtitle: String) : RowItem("__all__", title, subtitle)
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -91,11 +93,15 @@ fun HomeScreen(
     val smallTile = if (LauncherSettings.largeTiles) (if (showContinue) 200.dp else 220.dp) else 190.dp
     val drives by rememberUsbDrives()
     val hdmi by rememberLiveHdmi()
+    val usbTitle = stringResource(R.string.usb_drive)
+    val hdmiUnnamed = stringResource(R.string.hdmi_device_connected)
+    val allTitle = stringResource(R.string.all_apps)
+    val allSubtitle = stringResource(R.string.apps_count, apps.size)
     val items = buildList {
-        if (LauncherSettings.usbTile) drives.forEach { add(RowItem.Usb(it)) }
-        if (LauncherSettings.hdmiTile) hdmi.forEach { add(RowItem.Hdmi(it)) }
+        if (LauncherSettings.usbTile) drives.forEach { add(RowItem.Usb(it, usbTitle)) }
+        if (LauncherSettings.hdmiTile) hdmi.forEach { add(RowItem.Hdmi(it, hdmiUnnamed)) }
         apps.filter { !it.hidden }.forEach { add(RowItem.App(it)) }
-        add(RowItem.All(apps.size))
+        add(RowItem.All(allTitle, allSubtitle))
     }
     val keys = items.map { it.key }
     fun clickFor(item: RowItem): () -> Unit = when (item) {
@@ -259,14 +265,14 @@ private fun TopBar(onOpenAll: () -> Unit, onOpenPanel: () -> Unit) {
 internal fun ActionButtons(onOpenAll: () -> Unit, onOpenPanel: () -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     Row(horizontalArrangement = Arrangement.spacedBy(22.dp), modifier = modifier) {
-        RoundButton(Icons.Rounded.Apps, Color(0xFF1E88E5), "Все приложения", onOpenAll)
+        RoundButton(Icons.Rounded.Apps, Color(0xFF1E88E5), stringResource(R.string.all_apps), onOpenAll)
         // Prefer the TV build of RuStore; fall back to the phone one.
         listOf(RUSTORE_TV, RUSTORE).firstOrNull { context.isInstalled(it) }?.let { store ->
             RoundButton(Icons.Rounded.ShoppingBag, Color(0xFFF5A623), "RuStore") { context.launchPackage(store) }
         }
-        RoundButton(Icons.Rounded.Tune, Color(0xFF2EB85C), "Быстрые настройки") { context.openQuickPanel() }
-        RoundButton(Icons.Rounded.Settings, Color(0xFF8A8A8A), "Настройки") { context.openSettings() }
-        RoundButton(Icons.Rounded.Palette, Color(0xFF8E44AD), "Оформление", onOpenPanel)
+        RoundButton(Icons.Rounded.Tune, Color(0xFF2EB85C), stringResource(R.string.quick_settings)) { context.openQuickPanel() }
+        RoundButton(Icons.Rounded.Settings, Color(0xFF8A8A8A), stringResource(R.string.settings)) { context.openSettings() }
+        RoundButton(Icons.Rounded.Palette, Color(0xFF8E44AD), stringResource(R.string.appearance), onOpenPanel)
     }
 }
 

@@ -20,16 +20,17 @@ import androidx.compose.runtime.mutableStateOf
  */
 @SuppressLint("MissingPermission")
 object BluetoothScan {
-    class Found(val name: String, val address: String, val kind: String)
+    /** [kind]: string resource naming the device type. */
+    class Found(val name: String, val address: String, val kind: Int)
 
     val found = mutableStateListOf<Found>()
     val scanning = mutableStateOf(false)
     /** Address -> [PAIRING], [PAIRED] or [FAILED]. */
     val pairing = mutableStateMapOf<String, String>()
 
-    const val PAIRING = "Сопряжение…"
-    const val PAIRED = "Сопряжено"
-    const val FAILED = "Не удалось"
+    const val PAIRING = "pairing"
+    const val PAIRED = "paired"
+    const val FAILED = "failed"
 
     private var receiver: BroadcastReceiver? = null
     private val adapter get() = BluetoothAdapter.getDefaultAdapter()
@@ -128,11 +129,11 @@ object BluetoothScan {
         }.start()
     }
 
-    private fun kind(device: BluetoothDevice): String = when (device.bluetoothClass?.majorDeviceClass) {
-        BluetoothClass.Device.Major.AUDIO_VIDEO -> "колонка/наушники"
-        BluetoothClass.Device.Major.PHONE -> "телефон"
-        BluetoothClass.Device.Major.COMPUTER -> "компьютер"
-        BluetoothClass.Device.Major.PERIPHERAL -> "геймпад/клавиатура"
-        else -> "устройство"
+    private fun kind(device: BluetoothDevice): Int = when (device.bluetoothClass?.majorDeviceClass) {
+        BluetoothClass.Device.Major.AUDIO_VIDEO -> R.string.bt_kind_audio
+        BluetoothClass.Device.Major.PHONE -> R.string.bt_kind_phone
+        BluetoothClass.Device.Major.COMPUTER -> R.string.bt_kind_computer
+        BluetoothClass.Device.Major.PERIPHERAL -> R.string.bt_kind_peripheral
+        else -> R.string.bt_kind_other
     }
 }

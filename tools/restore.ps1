@@ -6,6 +6,8 @@
   Usage (PowerShell):
     .\tools\restore.ps1 -Device 192.168.1.50         # projector's IP (port 5555 is added if missing)
     .\tools\restore.ps1 -Device 192.168.1.50 -Reboot # reboot at the end (needed for the language)
+    .\tools\restore.ps1 -Device 192.168.1.50 -Language en-US -TimeZone Europe/London
+  -Language (default ru-RU) also picks Beam's interface language; -TimeZone defaults to Europe/Moscow.
   -Device and -Adb default to DEVICE and ADB from local.env (KEY=value lines, git-ignored) or the
   environment; adb itself defaults to the one on PATH.
 
@@ -16,6 +18,8 @@
 param(
     [string]$Device,
     [string]$Adb,
+    [string]$Language = "ru-RU",
+    [string]$TimeZone = "Europe/Moscow",
     [switch]$Reboot
 )
 
@@ -154,10 +158,10 @@ Step "Панель Beam (голосовая кнопка и кнопки пул�
 }
 
 Write-Host "`n6. Система" -ForegroundColor Cyan
-Step "Русский язык (применится после перезагрузки)" { Adb shell setprop persist.sys.locale ru-RU | Out-Null }
-Step "Часовой пояс: Москва (прошивка по умолчанию ставит Шанхай)" {
+Step "Язык $Language (применится после перезагрузки)" { Adb shell setprop persist.sys.locale $Language | Out-Null }
+Step "Часовой пояс $TimeZone (прошивка по умолчанию ставит Шанхай)" {
     Adb shell settings put global auto_time_zone 0 | Out-Null
-    Adb shell service call alarm 3 s16 Europe/Moscow | Out-Null
+    Adb shell service call alarm 3 s16 $TimeZone | Out-Null
 }
 Step "Bluetooth-имя «XGIMI Play 6»" {
     Expect (Adb shell am broadcast -n com.home.tiles/.AdbCommandReceiver --es bt_name "'XGIMI Play 6'") 'data="ok"'

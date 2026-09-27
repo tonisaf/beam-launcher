@@ -265,7 +265,7 @@ object VoiceCommands {
             ).forEach { (word, mode) ->
                 cmd("режим $word", "$word режим") { ctx ->
                     Xgimi.setPictureMode(ctx, mode)
-                    "Режим: " + (Xgimi.pictureModes.firstOrNull { it.second == mode }?.first ?: word)
+                    "Режим: " + (Xgimi.pictureModes.firstOrNull { it.second == mode }?.let { ctx.getString(it.first) } ?: word)
                 }
             }
 

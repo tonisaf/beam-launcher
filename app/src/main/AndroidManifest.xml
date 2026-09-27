@@ -103,7 +103,7 @@
             android:name=".OpenPanelActivity"
             android:excludeFromRecents="true"
             android:exported="true"
-            android:label="Оформление"
+            android:label="@string/label_appearance_shortcut"
             android:noHistory="true"
             android:taskAffinity=""
             android:theme="@android:style/Theme.NoDisplay">
@@ -126,7 +126,7 @@
         <service
             android:name=".VoskRecognitionService"
             android:exported="true"
-            android:label="Beam: распознавание речи">
+            android:label="@string/label_speech">
             <intent-filter>
                 <action android:name="android.speech.RecognitionService" />
             </intent-filter>
@@ -165,7 +165,7 @@
         <service
             android:name=".PanelOverlay"
             android:exported="true"
-            android:label="Beam: панель"
+            android:label="@string/label_panel"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />
