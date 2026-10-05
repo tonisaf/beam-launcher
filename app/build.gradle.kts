@@ -63,7 +63,7 @@ dependencies {
     implementation("androidx.palette:palette-ktx:1.0.0")
     // Offline speech recognition for the remote's voice key.
     implementation("com.alphacephei:vosk-android:0.3.75@aar")
-    implementation("net.java.dev.jna:jna:5.18.1@aar")
+    implementation("net.java.dev.jna:jna:5.19.1@aar")
 
     testImplementation("junit:junit:4.13.2")
 }
