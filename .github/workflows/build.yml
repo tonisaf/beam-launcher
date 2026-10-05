@@ -14,7 +14,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - uses: gradle/actions/setup-gradle@v5
+      - uses: gradle/actions/setup-gradle@v6
       - name: Build launcher and remote-button stubs
         run: ./gradlew :app:assembleRelease :stub:assembleRelease --console=plain
       # The build is the check; the account's artifact storage quota running out shouldn't fail it.
@@ -35,7 +35,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - uses: gradle/actions/setup-gradle@v5
+      - uses: gradle/actions/setup-gradle@v6
       - name: Unit tests
         run: ./gradlew :app:testDebugUnitTest --console=plain
       - uses: actions/upload-artifact@v7
@@ -54,7 +54,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - uses: gradle/actions/setup-gradle@v5
+      - uses: gradle/actions/setup-gradle@v6
       # -PlintStrict: errors fail the build; warnings stay in the report. One stub flavour is
       # enough, the four differ only in their package name.
       - name: Lint
