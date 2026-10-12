@@ -639,6 +639,17 @@ object Projection {
     fun tilt(clockwise: Boolean) {
         Gmpf.call("SystemManager", "setScreenRotation", if (clockwise) 5 else 6, 0.5f)
     }
+
+    /**
+     * The picture's tilt in degrees, clockwise positive: the slope of its top edge, from the
+     * keystone corners the firmware applies (the tilt is made of them, so this also counts a
+     * hand-moved corner). Null if the corners can't be read.
+     */
+    fun tiltDegrees(): Double? {
+        val c = Keystone.corners() ?: return null
+        val degrees = Math.toDegrees(kotlin.math.atan2((c[3] - c[1]).toDouble(), (c[2] - c[0]).toDouble()))
+        return Math.round(degrees * 10) / 10.0
+    }
 }
 
 /**
@@ -732,5 +743,33 @@ object Keystone {
 
     fun zoom(): Int? = Gmpf.int(DISPLAY, "getCurrentZoomStep", 0)
 
-    fun setZoom(step: Int): Boolean = Gmpf.ok(DISPLAY, "setDigitalZoomStep", step.coerceIn(0, MAX_ZOOM))
+    /** The zoom type XGIMI's own "zoom and shift" page opens its session with. */
+    private const val ZOOM_SESSION = 1
+
+    /**
+     * Moves the picture to zoom step [step]. The firmware takes setDigitalZoomStep only inside a
+     * zoom session (zoomStart..zoomFinish, as XGIMI's own page does; outside one it logs "steps is
+     * ERR" and the call still returns normally) and moves a single step per call, so this repeats
+     * it until the step it reads back is the one asked for. False if it never got there.
+     */
+    fun setZoom(step: Int): Boolean {
+        val target = step.coerceIn(0, MAX_ZOOM)
+        if (!Gmpf.ok(DISPLAY, "zoomStart", ZOOM_SESSION)) return false
+        try {
+            var stalled = 0
+            var last = zoom() ?: return false
+            repeat(2 * MAX_ZOOM + 2) {
+                if (last == target) return true
+                if (!Gmpf.ok(DISPLAY, "setDigitalZoomStep", target)) return false
+                val now = zoom() ?: return false
+                // A call that didn't move it: give the firmware a moment, then give up.
+                if (now == last && ++stalled > 3) return false
+                if (now == last) Thread.sleep(50) else stalled = 0
+                last = now
+            }
+            return last == target
+        } finally {
+            Gmpf.ok(DISPLAY, "zoomFinish", ZOOM_SESSION)
+        }
+    }
 }

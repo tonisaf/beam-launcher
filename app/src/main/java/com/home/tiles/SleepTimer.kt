@@ -1,5 +1,6 @@
 package com.home.tiles
 
+import android.accessibilityservice.AccessibilityService
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
@@ -94,11 +95,14 @@ class SleepTimerReceiver : BroadcastReceiver() {
 }
 
 /**
- * Powering off the way the remote does (standby). XGIMI's power menu turns the projector off when
- * it is asked to show while already open, so Beam opens it and asks again once it's up.
+ * Powering off the way the remote does (standby). The accessibility service's "lock screen" action
+ * puts the projector to sleep along the same path as the power key, with no menu on screen. Without
+ * the service, XGIMI's power menu turns the projector off when it is asked to show while already
+ * open, so Beam opens it and asks again once it's up.
  */
 object Power {
     fun off(context: Context) {
+        if (PanelOverlay.globalAction(AccessibilityService.GLOBAL_ACTION_LOCK_SCREEN)) return
         val menu = Intent("com.xgimi.action.WINODWSYSTEM").setPackage(SHUTDOWN_PKG)
         val send = { runCatching { context.startService(menu) }.onFailure { Log.w("Power", "power menu unavailable", it) } }
         send()

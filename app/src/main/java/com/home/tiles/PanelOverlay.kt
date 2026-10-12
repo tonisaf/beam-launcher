@@ -42,6 +42,7 @@ class PanelOverlay : AccessibilityService() {
     private var listening = false
     private var bubble: TextView? = null
     private val startListening = Runnable {
+        if (!LauncherSettings.voiceAssistantEnabled || voice == null) return@Runnable
         listening = true
         voice?.loadModel()
         Sounds.popup()
@@ -77,14 +78,16 @@ class PanelOverlay : AccessibilityService() {
                 return true
             }
         }
-        if (event.keyCode == SETTINGS_KEY && LauncherSettings.settingsKeyPanel) {
+        if (event.keyCode == SETTINGS_KEY && LauncherSettings.overlayPanelEnabled && LauncherSettings.settingsKeyPanel) {
             if (firstDown) handler.post {
+                if (!LauncherSettings.overlayPanelEnabled) return@post
                 if (view == null) showPanel() else hidePanel()
                 closeStockQuickSettings()
             }
             return true
         }
         if (event.keyCode != KeyEvent.KEYCODE_F5) return false
+        if (!LauncherSettings.overlayPanelEnabled && !LauncherSettings.voiceAssistantEnabled) return false
         // Answer at once and do the work afterwards: if this call takes too long (~0.5 s, e.g.
         // while the launcher in this same process is busy), the system also hands the key to the
         // foreground app, and the launcher would open its own copy of the panel.
@@ -110,6 +113,7 @@ class PanelOverlay : AccessibilityService() {
     private var closeStockUntil = 0L
 
     private fun sendCloseDialogs() {
+        if (!LauncherSettings.overlayPanelEnabled) return
         @Suppress("DEPRECATION")
         sendBroadcast(Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS).putExtra("reason", "beam"))
     }
@@ -119,6 +123,7 @@ class PanelOverlay : AccessibilityService() {
      * it only counts as a voice command once the key has been held past [HOLD_MS].
      */
     private fun voiceKeyDown() {
+        if (!LauncherSettings.voiceAssistantEnabled) return
         // Another app is waiting for dictation: the key is its push-to-talk.
         VoiceRequests.onVoiceKey?.let {
             it(true)
@@ -131,7 +136,7 @@ class PanelOverlay : AccessibilityService() {
     }
 
     private fun voiceKeyUp() {
-        VoiceRequests.onVoiceKey?.let {
+        VoiceRequests.onVoiceKey?.takeIf { LauncherSettings.voiceAssistantEnabled }?.let {
             it(false)
             return
         }
@@ -144,12 +149,14 @@ class PanelOverlay : AccessibilityService() {
             return
         }
         listening = false
+        val generation = VoiceRequests.generation
         showBubble("…")
         Thread {
             val text = session?.finish().orEmpty()
             // Recognition is slow and stays here; the command itself touches windows and toasts,
             // which need the main thread.
             handler.post {
+                if (!LauncherSettings.voiceAssistantEnabled || generation != VoiceRequests.generation || instance !== this) return@post
                 val result = when {
                     text == VoiceSession.NO_MODEL -> tr(R.string.voice_model_missing)
                     text.isBlank() -> tr(R.string.didnt_catch)
@@ -201,7 +208,7 @@ class PanelOverlay : AccessibilityService() {
     }
 
     private fun showPanel() {
-        if (view != null) return
+        if (!LauncherSettings.overlayPanelEnabled || view != null) return
         val owner = OverlayOwner().also { this.owner = it }
         val composeView = ComposeView(this).apply {
             setViewTreeLifecycleOwner(owner)
@@ -269,6 +276,7 @@ class PanelOverlay : AccessibilityService() {
     override fun onDestroy() {
         runCatching { unregisterReceiver(screenOff) }
         voice?.cancel()
+        handler.removeCallbacksAndMessages(null)
         hideBubble()
         hidePanel()
         if (instance === this) instance = null
@@ -297,14 +305,38 @@ class PanelOverlay : AccessibilityService() {
             }
         }
 
+        /** One of the system's global actions (lock screen, power dialog, ...); false when the service isn't running. */
+        fun globalAction(action: Int): Boolean = instance?.performGlobalAction(action) == true
+
         /** Whether the service is connected, so it (not the launcher) handles the panel key. */
         val running get() = instance != null
+
+        /** Apply switches without disconnecting accessibility (sleep and calibration still use it). */
+        fun featuresChanged() {
+            val service = instance ?: return
+            val apply = Runnable {
+                if (!LauncherSettings.overlayPanelEnabled) {
+                    service.closeStockUntil = 0L
+                    service.hidePanel()
+                }
+                if (!LauncherSettings.voiceAssistantEnabled) {
+                    service.handler.removeCallbacks(service.startListening)
+                    service.voice?.cancel()
+                    service.voice = null
+                    service.listening = false
+                    service.hideBubble()
+                    VoiceModel.releaseLater()
+                }
+            }
+            if (Looper.myLooper() == Looper.getMainLooper()) apply.run() else service.handler.post(apply)
+        }
 
         /**
          * Opens the panel over the current app; false when the service isn't enabled. Safe from any
          * thread: the window is added on the main thread.
          */
         fun show(): Boolean {
+            if (!LauncherSettings.overlayPanelEnabled) return false
             val service = instance ?: return false
             service.handler.post { service.showPanel() }
             return true

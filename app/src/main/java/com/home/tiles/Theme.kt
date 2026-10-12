@@ -8,6 +8,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 /** User-facing launcher settings. Snapshot state, so anything that reads them recomposes on change. */
+const val HOME_SWITCH = "switch"
+const val HOME_GOOGLE_TV = "googletv"
+
 object LauncherSettings {
     private lateinit var prefs: SharedPreferences
 
@@ -18,7 +21,10 @@ object LauncherSettings {
     private val usbTileState = mutableStateOf(true)
     private val hdmiTileState = mutableStateOf(true)
     private val settingsKeyPanelState = mutableStateOf(false)
+    private val overlayPanelState = mutableStateOf(true)
+    private val voiceAssistantState = mutableStateOf(true)
     private val secondRowState = mutableStateOf(SECOND_ROW_AUTO)
+    private val homeLayoutState = mutableStateOf(HOME_SWITCH)
     private val xmbColorState = mutableStateOf(-1)
     private val bgAnimationState = mutableStateOf(true)
 
@@ -33,7 +39,10 @@ object LauncherSettings {
         usbTileState.value = prefs.getBoolean("usbTile", true)
         hdmiTileState.value = prefs.getBoolean("hdmiTile", true)
         settingsKeyPanelState.value = prefs.getBoolean("settingsKeyPanel", false)
+        overlayPanelState.value = prefs.getBoolean("overlayPanelEnabled", true)
+        voiceAssistantState.value = prefs.getBoolean("voiceAssistantEnabled", true)
         secondRowState.value = prefs.getString("secondRow", SECOND_ROW_AUTO) ?: SECOND_ROW_AUTO
+        homeLayoutState.value = prefs.getString("homeLayout", HOME_SWITCH) ?: HOME_SWITCH
         xmbColorState.value = prefs.getInt("xmbColor", -1)
         bgAnimationState.value = prefs.getBoolean("bgAnimation", true)
     }
@@ -63,6 +72,25 @@ object LauncherSettings {
         get() = settingsKeyPanelState.value
         set(value) { settingsKeyPanelState.value = value; prefs.edit().putBoolean("settingsKeyPanel", value).apply() }
 
+    /** Floating quick settings; the launcher's own settings remain accessible from Home. */
+    var overlayPanelEnabled: Boolean
+        get() = overlayPanelState.value
+        set(value) {
+            overlayPanelState.value = value
+            prefs.edit().putBoolean("overlayPanelEnabled", value).apply()
+            PanelOverlay.featuresChanged()
+        }
+
+    var voiceAssistantEnabled: Boolean
+        get() = voiceAssistantState.value
+        set(value) {
+            if (voiceAssistantState.value == value) return
+            voiceAssistantState.value = value
+            prefs.edit().putBoolean("voiceAssistantEnabled", value).apply()
+            if (!value) VoiceRequests.disable()
+            PanelOverlay.featuresChanged()
+        }
+
     var hdmiTile: Boolean
         get() = hdmiTileState.value
         set(value) { hdmiTileState.value = value; prefs.edit().putBoolean("hdmiTile", value).apply() }
@@ -71,6 +99,11 @@ object LauncherSettings {
     var secondRow: String
         get() = secondRowState.value
         set(value) { secondRowState.value = value; prefs.edit().putString("secondRow", value).apply() }
+
+    /** The home screen's layout: [HOME_SWITCH] (tiles in a row) or [HOME_GOOGLE_TV] (tabs, channel rows, round icons). */
+    var homeLayout: String
+        get() = homeLayoutState.value
+        set(value) { homeLayoutState.value = value; prefs.edit().putString("homeLayout", value).apply() }
 
     /** XMB colour index into [XmbColors], or -1 for the current month's colour like the PS3. */
     var xmbColor: Int
@@ -128,4 +161,3 @@ val Backgrounds = listOf(
     BackgroundPreset(R.string.bg_lavender, listOf(Color(0xFFEAE3FF), Color(0xFFFAFAFA)), listOf(Color(0xFF1D1830), Color(0xFF3A3060))),
     BackgroundPreset(R.string.bg_xmb, emptyList(), emptyList(), xmb = true),
 )
-

@@ -19,6 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -93,7 +94,10 @@ class OpenPanelActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Over the current app when our accessibility service runs; otherwise via the launcher.
-        if (!PanelOverlay.show()) {
+        LauncherSettings.init(this)
+        if (!LauncherSettings.overlayPanelEnabled) {
+            openQuickPanel()
+        } else if (!PanelOverlay.show()) {
             PanelRequests.count.intValue++
             startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         }
@@ -114,9 +118,14 @@ private fun LauncherApp(
     var screen by remember { mutableStateOf(Screen.Home) }
     var optionsFor by remember { mutableStateOf<AppEntry?>(null) }
     var panelOpen by remember { mutableStateOf(false) }
+    var setupOpen by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    // Checked again whenever the launcher comes back, so a permission granted meanwhile drops off the list.
+    val missing = remember(resumeTick, LauncherSettings.voiceAssistantEnabled) { Setup.missing(context) }
 
     LaunchedEffect(resumeTick) { screen = Screen.Home }
-    LaunchedEffect(panelRequest) { if (panelRequest > 0) panelOpen = true }
+    LaunchedEffect(missing) { if (Setup.shouldAutoShow(context, missing)) setupOpen = true }
+    LaunchedEffect(panelRequest) { if (panelRequest > 0 && LauncherSettings.overlayPanelEnabled) panelOpen = true }
 
     Box(Modifier.fillMaxSize().background(Colors.backgroundBrush()).arrowSoundTracker().panelKey { panelOpen = !panelOpen }) {
         if (Colors.isXmb) XmbBackground()
@@ -129,6 +138,7 @@ private fun LauncherApp(
                 // always toggle the same single panel.
                 onOpenPanel = { if (!PanelOverlay.show()) panelOpen = true },
                 onOptions = { optionsFor = it },
+                onSetup = if (missing.isNotEmpty()) { { setupOpen = true } } else null,
             )
             Screen.AllApps -> AllAppsScreen(
                 repo, apps,
@@ -138,6 +148,7 @@ private fun LauncherApp(
         }
         }
         if (panelOpen) SettingsPanel(onDismiss = { panelOpen = false })
+        if (setupOpen && missing.isNotEmpty()) SetupDialog(missing, onDismiss = { setupOpen = false })
         optionsFor?.let { entry ->
             OptionsDialog(entry, repo, onDismiss = { optionsFor = null }, onChanged = onChanged)
         }

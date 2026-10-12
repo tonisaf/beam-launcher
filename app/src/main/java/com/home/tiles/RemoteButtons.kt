@@ -70,7 +70,9 @@ class RemoteButtonActivity : ComponentActivity() {
                 RemoteButtons.lastPressed.intValue = index
             } else {
                 RemoteButtons.perform(this, index) {
-                    if (!PanelOverlay.show()) {
+                    if (!LauncherSettings.overlayPanelEnabled) {
+                        openQuickPanel()
+                    } else if (!PanelOverlay.show()) {
                         PanelRequests.count.intValue++
                         startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                     }

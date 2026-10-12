@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -68,15 +69,7 @@ internal fun AboutSection() {
     }
     if (rows.isEmpty()) return
     Section(tr(R.string.about_projector))
-    Column(Modifier.fillMaxWidth().background(CardBg, RoundedCornerShape(16.dp)).padding(horizontal = 18.dp, vertical = 12.dp)) {
-        rows.forEach { (label, value) ->
-            Row(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
-                T(label, 15.sp, color = PanelDim)
-                Spacer(Modifier.weight(1f))
-                T(value, 15.sp, color = PanelText)
-            }
-        }
-    }
+    FactsCard(rows)
 }
 
 private fun aboutRows(context: Context): List<Pair<String, String>> {
@@ -86,11 +79,7 @@ private fun aboutRows(context: Context): List<Pair<String, String>> {
     }
     val storage = android.os.StatFs(android.os.Environment.getDataDirectory().path)
     val uptime = android.os.SystemClock.elapsedRealtime() / 60_000
-    val ip = runCatching {
-        java.net.NetworkInterface.getNetworkInterfaces().toList()
-            .flatMap { it.inetAddresses.toList() }
-            .firstOrNull { !it.isLoopbackAddress && it is java.net.Inet4Address }?.hostAddress
-    }.getOrNull()
+    val ip = ipv4Address()
     val beam = runCatching { context.packageManager.getPackageInfo(context.packageName, 0).versionName }.getOrNull()
     fun gb(bytes: Long) = String.format(Locale.US, "%.1f", bytes / 1e9)
     return listOfNotNull(
@@ -127,10 +116,15 @@ internal fun ProjectionPage(onRotatePage: () -> Unit) {
         T(tr(R.string.rear_projection_hint), 14.sp, color = PanelDim)
     }
     Section(tr(R.string.picture_tilt))
-    Selector(tr(R.string.straighten), tr(R.string.by_half_degree), Modifier.fillMaxWidth()) { step ->
+    val tilt = rememberFirmwareState { Projection.tiltDegrees() }
+    Selector(tr(R.string.straighten), tilt.value?.let { if (it == 0.0) "0°" else String.format(Locale.US, "%+.1f°", it) } ?: "—", Modifier.fillMaxWidth()) { step ->
         // Every step counts, so each gets its own key: none is merged into the one before.
-        PanelIo.submit("tilt-${System.nanoTime()}") { Projection.tilt(clockwise = step > 0) }
+        PanelIo.submit("tilt-${System.nanoTime()}") {
+            Projection.tilt(clockwise = step > 0)
+            tilt.refresh()
+        }
     }
+    T(tr(R.string.by_half_degree), 14.sp, color = PanelDim)
     Spacer(Modifier.height(10.dp))
     ListRow(tr(R.string.rotate_xgimi), onRotatePage)
 }
@@ -169,6 +163,17 @@ internal fun PowerPage(onOff: () -> Unit, onXgimiMenu: () -> Unit) {
         T(tr(R.string.sleep_off_at, at), 14.sp, color = PanelDim)
     }
     Section(tr(R.string.more))
+    // A restart is one press too easy to make with a remote: the first press asks, the second does it.
+    var confirmRestart by remember { mutableStateOf(false) }
+    LaunchedEffect(confirmRestart) {
+        if (confirmRestart) {
+            delay(5_000)
+            confirmRestart = false
+        }
+    }
+    ListRow(if (confirmRestart) tr(R.string.restart_confirm) else tr(R.string.restart)) {
+        if (confirmRestart) Xgimi.restart(context) else confirmRestart = true
+    }
     ListRow(tr(R.string.reboot_xgimi_menu), onXgimiMenu)
 }
 

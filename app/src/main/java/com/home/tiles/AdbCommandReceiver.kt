@@ -1,5 +1,6 @@
 package com.home.tiles
 
+import android.accessibilityservice.AccessibilityService
 import android.bluetooth.BluetoothAdapter
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -21,6 +22,8 @@ class AdbCommandReceiver : BroadcastReceiver() {
             if (index >= 0) LauncherSettings.background = index
             resultData = if (index >= 0) "ok" else "unknown background"
         }
+        // --es home_layout switch|googletv
+        intent.getStringExtra("home_layout")?.takeIf { it == HOME_SWITCH || it == HOME_GOOGLE_TV }?.let { LauncherSettings.homeLayout = it }
         if (intent.hasExtra("bg_animation")) {
             LauncherSettings.bgAnimation = intent.getBooleanExtra("bg_animation", true)
             resultData = "ok"
@@ -149,13 +152,39 @@ class AdbCommandReceiver : BroadcastReceiver() {
                 "error: expected 8 comma-separated integers"
             }
         }
+        // --ez restart true: restarts the projector (see Xgimi.restart)
+        if (intent.getBooleanExtra("restart", false)) {
+            Xgimi.restart(context)
+            resultData = "restart requested"
+        }
+        // --ez auto_kst true: starts automatic keystone the way Beam's button does (see Xgimi.autoKeystone)
+        if (intent.getBooleanExtra("auto_kst", false)) {
+            Xgimi.autoKeystone(context)
+            resultData = "auto keystone requested"
+        }
+        // --ez power_off true: turns the projector off (see Power.off)
+        if (intent.getBooleanExtra("power_off", false)) {
+            Power.off(context)
+            resultData = "power off requested"
+        }
+        // --es global lock|power_dialog: an accessibility global action through Beam's service
+        intent.getStringExtra("global")?.let { name ->
+            val action = when (name) {
+                "lock" -> AccessibilityService.GLOBAL_ACTION_LOCK_SCREEN
+                "power_dialog" -> AccessibilityService.GLOBAL_ACTION_POWER_DIALOG
+                else -> null
+            }
+            resultData = if (action == null) "error: expected lock or power_dialog" else "performed=${PanelOverlay.globalAction(action)}"
+        }
         if (intent.hasExtra("zoom_set")) resultData = Keystone.setZoom(intent.getIntExtra("zoom_set", 0)).toString()
         intent.getStringExtra("gmpf")?.let { spec ->
             // "Class.method" or "Class.method:1,2": integer arguments are converted to what the method takes.
             resultData = runCatching {
-                val (cls, call) = spec.split('.', limit = 2)
-                val method = call.substringBefore(':')
-                val args = call.substringAfter(':', "").split(',').filter { it.isNotBlank() }.map { it.trim().toInt() }
+                // The class may be fully qualified, so split at the last dot before the arguments.
+                val target = spec.substringBefore(':')
+                val cls = target.substringBeforeLast('.')
+                val method = target.substringAfterLast('.')
+                val args = spec.substringAfter(':', "").split(',').filter { it.isNotBlank() }.map { it.trim().toInt() }
                 Gmpf.call(cls, method, *args.toTypedArray()).fold({ it.toString() }, { "error $it" })
             }.getOrElse { "error: expected Class.method[:int,int] ($it)" }
         }

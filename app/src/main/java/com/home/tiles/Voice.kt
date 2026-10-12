@@ -375,7 +375,10 @@ object VoiceCommands {
             cmd("эйч ди эм ай", "приставка", "включи приставку") { ctx ->
                 Xgimi.hdmiInputs(ctx).firstOrNull()?.let { Xgimi.openInput(ctx, it); "HDMI" } ?: "HDMI не найден"
             }
-            cmd("настройки", "панель") { PanelOverlay.show(); "Панель" }
+            cmd("настройки", "панель") {
+                if (!LauncherSettings.overlayPanelEnabled) it.openQuickPanel() else PanelOverlay.show()
+                "Панель"
+            }
 
             numbers.forEachIndexed { i, word ->
                 cmd("яркость $word") { Lumens.setLevel(i + 1); "Яркость ${i + 1}" }
@@ -475,6 +478,23 @@ object VoiceCommands {
  * it the key instead of toggling the panel while one is pending.
  */
 object VoiceRequests {
+    @Volatile
+    var generation = 0L
+        private set
+    private var onDisabled: (() -> Unit)? = null
+
+    /** Invalidates results already being recognised as well as pending microphone requests. */
+    fun disable() {
+        val cancel = synchronized(this) {
+            generation++
+            val callback = onDisabled
+            owner = null
+            onVoiceKey = null
+            onDisabled = null
+            callback
+        }
+        cancel?.invoke()
+    }
     /** Called on the main thread with true when the voice key goes down, false when it comes up. */
     @Volatile
     var onVoiceKey: ((Boolean) -> Unit)? = null
@@ -484,8 +504,9 @@ object VoiceRequests {
 
     /** [owner] takes the voice key; a request that held it before no longer gets it. */
     @Synchronized
-    fun claim(owner: Any, onKey: (Boolean) -> Unit) {
+    fun claim(owner: Any, onDisabled: () -> Unit, onKey: (Boolean) -> Unit) {
         this.owner = owner
+        this.onDisabled = onDisabled
         onVoiceKey = onKey
     }
 
@@ -495,6 +516,7 @@ object VoiceRequests {
         if (this.owner !== owner) return
         this.owner = null
         onVoiceKey = null
+        onDisabled = null
     }
 }
 
@@ -509,7 +531,8 @@ class VoskRecognitionService : android.speech.RecognitionService() {
     private var callback: Callback? = null
 
     override fun onStartListening(intent: android.content.Intent?, listener: Callback) {
-        if (!VoiceModel.installed(this)) {
+        LauncherSettings.init(this)
+        if (!LauncherSettings.voiceAssistantEnabled || !VoiceModel.installed(this)) {
             listener.error(android.speech.SpeechRecognizer.ERROR_CLIENT)
             return
         }
@@ -520,7 +543,13 @@ class VoskRecognitionService : android.speech.RecognitionService() {
         session = VoiceSession(this).also { it.start() }
         listener.readyForSpeech(android.os.Bundle())
         PanelOverlay.caption("🎤  Зажмите голосовую кнопку и говорите")
-        VoiceRequests.claim(this) { down ->
+        VoiceRequests.claim(this, onDisabled = {
+            session?.cancel()
+            val pending = callback
+            clear()
+            PanelOverlay.caption(null)
+            runCatching { pending?.error(android.speech.SpeechRecognizer.ERROR_CLIENT) }
+        }) { down ->
             if (down) {
                 handler.removeCallbacks(timeout)
                 PanelOverlay.caption("🎤  Слушаю…")
@@ -545,6 +574,7 @@ class VoskRecognitionService : android.speech.RecognitionService() {
     private fun finishRequest(recorded: VoiceSession?) {
         val listener = callback ?: return
         val current = session
+        val generation = VoiceRequests.generation
         clear()
         if (recorded == null) {
             current?.cancel()
@@ -556,6 +586,10 @@ class VoskRecognitionService : android.speech.RecognitionService() {
         Thread {
             val text = recorded.finishDictation().takeIf { it != VoiceSession.NO_MODEL }.orEmpty()
             handler.post {
+                if (!LauncherSettings.voiceAssistantEnabled || generation != VoiceRequests.generation) {
+                    runCatching { listener.error(android.speech.SpeechRecognizer.ERROR_CLIENT) }
+                    return@post
+                }
                 PanelOverlay.caption(if (text.isBlank()) "Не расслышал" else "«$text»", hideAfterMs = 1500)
                 runCatching {
                     if (text.isBlank()) listener.error(android.speech.SpeechRecognizer.ERROR_NO_MATCH)
@@ -595,14 +629,18 @@ class VoiceSearchActivity : android.app.Activity() {
 
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
-        if (!VoiceModel.installed(this)) {
+        LauncherSettings.init(this)
+        if (!LauncherSettings.voiceAssistantEnabled || !VoiceModel.installed(this)) {
             setResult(RESULT_CANCELED)
             finish()
             return
         }
         session = VoiceSession(this).also { it.start() }
         PanelOverlay.caption("🎤  Зажмите голосовую кнопку и говорите")
-        VoiceRequests.claim(this) { down ->
+        VoiceRequests.claim(this, onDisabled = {
+            session?.cancel()
+            done(null)
+        }) { down ->
             if (down) {
                 handler.removeCallbacks(timeout)
                 PanelOverlay.caption("🎤  Слушаю…")
@@ -614,8 +652,10 @@ class VoiceSearchActivity : android.app.Activity() {
     }
 
     private fun done(recorded: VoiceSession?) {
+        val generation = VoiceRequests.generation
         handler.removeCallbacks(timeout)
         VoiceRequests.release(this)
+        if (recorded == null) session?.cancel()
         session = null
         if (recorded == null) {
             PanelOverlay.caption(null)
@@ -627,6 +667,12 @@ class VoiceSearchActivity : android.app.Activity() {
         Thread {
             val text = recorded.finishDictation().takeIf { it != VoiceSession.NO_MODEL }.orEmpty()
             handler.post {
+                if (isDestroyed || isFinishing) return@post
+                if (!LauncherSettings.voiceAssistantEnabled || generation != VoiceRequests.generation) {
+                    setResult(RESULT_CANCELED)
+                    finish()
+                    return@post
+                }
                 PanelOverlay.caption(if (text.isBlank()) "Не расслышал" else "«$text»", hideAfterMs = 1500)
                 if (text.isBlank()) setResult(RESULT_CANCELED)
                 else setResult(

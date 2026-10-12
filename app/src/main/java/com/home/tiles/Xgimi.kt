@@ -53,6 +53,15 @@ object Xgimi {
             .putExtra("from", context.packageName),
     )
 
+    /**
+     * Restarts the projector without the power menu. The menu's own code listens for this broadcast
+     * (registered with the "normal" permission com.xgimi.permission.system, which Beam holds) and
+     * handles it as a tap on "Restart": the same preparation and the same REBOOT request.
+     */
+    fun restart(context: Context) {
+        context.sendBroadcast(Intent("com.xgimi.systemui.OPEN_RESTART_DEVICE"))
+    }
+
     /** Same menu as the power key: screen off, power off, restart, sleep timer. */
     fun powerMenu(context: Context) =
         startService(context, Intent("com.xgimi.action.WINODWSYSTEM").setPackage("com.xgimi.systemui"))

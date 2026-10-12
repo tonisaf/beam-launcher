@@ -343,6 +343,19 @@ Step "Стоковый лаунчер XGIMI ($stockLauncher)" {
     if (-not $script:HomeSet) { throw "Beam не назначен домашним экраном: стоковый лаунчер оставлен включённым" }
     Expect (Adb shell pm disable-user --user 0 $stockLauncher) "disabled"
 }
+# With several launchers claiming "Home" (ATV Launcher Pro, Google TV's, Launcher Manager, ...) XGIMI's own
+# chooser opens, "Always" is not remembered and Beam does not come up after a reboot. Disabling someone
+# else's launcher is not for the script to decide, so it only warns.
+$homeCandidates = Adb shell cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME
+$otherLaunchers = @($homeCandidates -split "`n" | ForEach-Object { $_.Trim() } |
+    Where-Object { $_ -match '^[\w.]+/\S+$' -and $_ -notmatch '^com\.home\.tiles/' -and $_ -notmatch 'FallbackHome' } |
+    ForEach-Object { ($_ -split '/')[0] } | Select-Object -Unique)
+if ($otherLaunchers.Count -gt 0) {
+    Write-Host "`n  Внимание: на «Домой» претендуют и другие лаунчеры: $($otherLaunchers -join ', ')" -ForegroundColor Yellow
+    Write-Host "  Из-за них после перезагрузки может открываться окно выбора вместо Beam. Если так, отключите их" -ForegroundColor Yellow
+    Write-Host "  (ничего не удаляется): adb shell pm disable-user --user 0 ПАКЕТ  (вернуть: pm enable ПАКЕТ)" -ForegroundColor Yellow
+    Write-Host "  Подробнее: README, «Если что-то не работает»." -ForegroundColor Yellow
+}
 
 Write-Host "`n5. Спец. возможности (прошивка сбрасывает их при загрузке, лаунчер потом возвращает сам)" -ForegroundColor Cyan
 Step "Панель Beam (голосовая кнопка и кнопки пульта)" {

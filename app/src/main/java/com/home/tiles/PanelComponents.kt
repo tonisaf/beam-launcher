@@ -345,3 +345,17 @@ internal fun ColorDot(color: Color, selected: Boolean, onClick: () -> Unit) {
         }
     }
 }
+
+/** A card of "name  value" lines, for read-only facts. */
+@Composable
+internal fun FactsCard(rows: List<Pair<String, String>>) {
+    Column(Modifier.fillMaxWidth().background(CardBg, RoundedCornerShape(16.dp)).padding(horizontal = 18.dp, vertical = 12.dp)) {
+        rows.forEach { (label, value) ->
+            Row(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
+                T(label, 15.sp, color = PanelDim)
+                Spacer(Modifier.weight(1f))
+                T(value, 15.sp, color = PanelText)
+            }
+        }
+    }
+}

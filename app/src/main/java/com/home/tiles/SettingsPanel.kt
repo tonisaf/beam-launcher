@@ -42,7 +42,6 @@ import androidx.compose.material.icons.rounded.Crop
 import androidx.compose.material.icons.rounded.Eco
 import androidx.compose.material.icons.rounded.Wifi
 import androidx.compose.material.icons.rounded.CropFree
-import androidx.compose.material.icons.rounded.Dashboard
 import androidx.compose.material.icons.rounded.FilterCenterFocus
 import androidx.compose.material.icons.rounded.Landscape
 import androidx.compose.material.icons.rounded.Palette
@@ -99,11 +98,11 @@ import java.util.Locale
 private enum class PanelPage(@StringRes val titleRes: Int) {
     Picture(R.string.picture),
     Sound(R.string.sound),
-    Appearance(R.string.appearance),
-    Home(R.string.home_screen),
+    Appearance(R.string.appearance_and_home),
     Remote(R.string.remote_buttons),
     Xgimi(R.string.xgimi_settings),
     Bluetooth(R.string.bluetooth),
+    Wifi(R.string.wifi_title),
     Screensaver(R.string.screensaver),
     Power(R.string.power),
     Projection(R.string.projection),
@@ -231,6 +230,8 @@ private data class MainPageState(
     val pictureMode: String?,
     /** Name of the connected speaker/headphones, shown under the Bluetooth tile. */
     val bluetoothAudio: String?,
+    /** The network the projector is on (or that Wi-Fi is off), shown under the Wi-Fi tile. */
+    val wifi: String?,
 ) {
     companion object {
         /** Blocking: binder calls into XGIMI's services, so off the main thread. */
@@ -240,6 +241,7 @@ private data class MainPageState(
             soundOutput = SoundOutput.output()?.let(::soundOutputName),
             pictureMode = PictureMode.current()?.let { mode -> Xgimi.pictureModes.firstOrNull { it.second == mode }?.first },
             bluetoothAudio = XgimiBluetooth.devices(context).firstOrNull { it.audio && it.connected }?.name,
+            wifi = WifiReader.read(context)?.let { if (!it.enabled) tr(R.string.wifi_off_short) else it.ssid ?: tr(R.string.wifi_not_connected_short) },
         )
     }
 }
@@ -288,7 +290,7 @@ private fun ColumnScope.MainPage(
         // icon tiles that show their name only when focused (like XGIMI's own panel).
         add(QuickItem(Icons.Rounded.CenterFocusStrong, tr(R.string.autofocus), action = projector { Xgimi.autoFocus(context) }, wide = true))
         add(QuickItem(Icons.Rounded.CropFree, tr(R.string.keystone), action = projector { PanelIo.submit("auto-keystone") { Xgimi.autoKeystone(context) } }, wide = true))
-        add(QuickItem(Icons.Rounded.Wifi, "Wi‑Fi", action = projector { Xgimi.openSettingsPage(context, Xgimi.PAGE_WIFI) }, wide = true))
+        add(QuickItem(Icons.Rounded.Wifi, "Wi‑Fi", PanelPage.Wifi, subtitle = state?.wifi, wide = true))
         add(QuickItem(Icons.Rounded.Bluetooth, "Bluetooth", PanelPage.Bluetooth, subtitle = bluetoothAudio, wide = true))
         add(QuickItem(Icons.Rounded.VolumeUp, tr(R.string.sound), PanelPage.Sound, subtitle = soundOutput, wide = true))
         add(QuickItem(Icons.Rounded.Tonality, tr(R.string.picture), PanelPage.Picture, subtitle = pictureMode, wide = true))
@@ -308,8 +310,7 @@ private fun ColumnScope.MainPage(
         add(QuickItem(Icons.Rounded.FilterCenterFocus, tr(R.string.manual_focus), action = projector { Xgimi.manualFocus(context) }))
         add(QuickItem(Icons.Rounded.Crop, tr(R.string.kst_and_size), PanelPage.Keystone))
         add(QuickItem(Icons.Rounded.ScreenRotation, tr(R.string.projection), PanelPage.Projection))
-        add(QuickItem(Icons.Rounded.Palette, tr(R.string.appearance), PanelPage.Appearance))
-        add(QuickItem(Icons.Rounded.Dashboard, tr(R.string.home_screen), PanelPage.Home))
+        add(QuickItem(Icons.Rounded.Palette, tr(R.string.appearance_and_home), PanelPage.Appearance))
         add(QuickItem(Icons.Rounded.SettingsRemote, tr(R.string.remote_buttons), PanelPage.Remote))
         add(QuickItem(Icons.Rounded.SettingsApplications, "XGIMI", PanelPage.Xgimi))
     }
@@ -517,8 +518,7 @@ private fun ColumnScope.SubPage(page: PanelPage, first: FocusRequester, onDismis
                 }
             }
         }
-        PanelPage.Appearance -> AppearancePage()
-        PanelPage.Home -> HomePage(onHdmiPage = { projector { Xgimi.openSettingsPage(context, Xgimi.PAGE_HDMI) } })
+        PanelPage.Appearance -> AppearancePage(onHdmiPage = { projector { Xgimi.openSettingsPage(context, Xgimi.PAGE_HDMI) } })
         PanelPage.Keystone -> KeystonePage(onScreen = {
             projector {
                 context.startActivity(
@@ -533,6 +533,7 @@ private fun ColumnScope.SubPage(page: PanelPage, first: FocusRequester, onDismis
         )
         PanelPage.Screensaver -> ScreensaverPage(onScenes = { projector { context.launchPackage(Xgimi.SCREENSAVER_APP) } })
         PanelPage.Remote -> RemoteButtonsSection()
+        PanelPage.Wifi -> WifiPage(onStockPage = { projector { Xgimi.openSettingsPage(context, Xgimi.PAGE_WIFI) } })
         PanelPage.Bluetooth -> BluetoothPage(onXgimiPage = { projector { Xgimi.openSettingsPage(context, Xgimi.PAGE_BLUETOOTH) } })
         PanelPage.Xgimi -> {
             SensorToggles()
@@ -547,6 +548,7 @@ private fun ColumnScope.SubPage(page: PanelPage, first: FocusRequester, onDismis
 
 /** The remote's voice key (F5 on the XGIMI remote, unused by the firmware) toggles the panel. */
 fun Modifier.panelKey(onToggle: () -> Unit): Modifier = onPreviewKeyEvent { event ->
+    if (!LauncherSettings.overlayPanelEnabled) return@onPreviewKeyEvent false
     val code = event.nativeKeyEvent.keyCode
     val settingsKey = code == PanelOverlay.SETTINGS_KEY && LauncherSettings.settingsKeyPanel
     if (code != AndroidKeyEvent.KEYCODE_F5 && !settingsKey) return@onPreviewKeyEvent false

@@ -22,8 +22,19 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+/** Look (theme, background, language) and what the home screen shows, then the firmware's start-up and HDMI settings. */
 @Composable
-internal fun AppearancePage() {
+internal fun AppearancePage(onHdmiPage: () -> Unit) {
+    Section(tr(R.string.beam_features))
+    Toggle(tr(R.string.beam_panel_enabled), LauncherSettings.overlayPanelEnabled, Modifier.fillMaxWidth()) {
+        LauncherSettings.overlayPanelEnabled = !LauncherSettings.overlayPanelEnabled
+    }
+    T(tr(R.string.beam_panel_enabled_hint), 14.sp, color = PanelDim, maxLines = 4)
+    Spacer(Modifier.height(10.dp))
+    Toggle(tr(R.string.voice_assistant_enabled), LauncherSettings.voiceAssistantEnabled, Modifier.fillMaxWidth()) {
+        LauncherSettings.voiceAssistantEnabled = !LauncherSettings.voiceAssistantEnabled
+    }
+    T(tr(R.string.voice_assistant_enabled_hint), 14.sp, color = PanelDim, maxLines = 3)
     val dark = LauncherSettings.dark
     Section(tr(R.string.theme))
     PairRow {
@@ -46,6 +57,8 @@ internal fun AppearancePage() {
     PairRow {
         Chip("English", AppLanguage.current == AppLanguage.EN, Modifier.weight(1f)) { AppLanguage.current = AppLanguage.EN }
     }
+    HomeScreenSettings()
+    HdmiSection(onHdmiPage)
 }
 
 /** Where the projector starts, the firmware's HDMI auto switch, and a link to its HDMI page (CEC). */
@@ -93,12 +106,21 @@ private fun HdmiSection(onHdmiPage: () -> Unit) {
 }
 
 @Composable
-internal fun HomePage(onHdmiPage: () -> Unit) {
+private fun HomeScreenSettings() {
+    Section(tr(R.string.home_layout))
+    PairRow {
+        Chip(tr(R.string.layout_switch), LauncherSettings.homeLayout == HOME_SWITCH, Modifier.weight(1f)) {
+            LauncherSettings.homeLayout = HOME_SWITCH
+        }
+        Chip(tr(R.string.layout_google_tv), LauncherSettings.homeLayout == HOME_GOOGLE_TV, Modifier.weight(1f)) {
+            LauncherSettings.homeLayout = HOME_GOOGLE_TV
+        }
+    }
     val context = LocalContext.current
     val channels by produceState(emptyList<TvChannel>()) {
         value = withContext(Dispatchers.IO) { queryTvChannels(context).filter { it.items.isNotEmpty() } }
     }
-    Section(tr(R.string.show))
+    Section(tr(R.string.show_on_home))
     Toggle(tr(R.string.now_playing), LauncherSettings.nowPlaying, Modifier.fillMaxWidth()) {
         LauncherSettings.nowPlaying = !LauncherSettings.nowPlaying
     }
@@ -110,7 +132,6 @@ internal fun HomePage(onHdmiPage: () -> Unit) {
     Toggle(tr(R.string.hdmi_tile), LauncherSettings.hdmiTile, Modifier.fillMaxWidth()) {
         LauncherSettings.hdmiTile = !LauncherSettings.hdmiTile
     }
-    HdmiSection(onHdmiPage)
     Section(tr(R.string.second_row))
     PairRow {
         Chip(tr(R.string.auto), LauncherSettings.secondRow == SECOND_ROW_AUTO, Modifier.weight(1f)) {
@@ -145,11 +166,13 @@ internal fun RemoteButtonsSection() {
         }
     }
 
-    Section(tr(R.string.settings_button))
-    Toggle(tr(R.string.opens_beam_panel), LauncherSettings.settingsKeyPanel, Modifier.fillMaxWidth()) {
-        LauncherSettings.settingsKeyPanel = !LauncherSettings.settingsKeyPanel
+    if (LauncherSettings.overlayPanelEnabled) {
+        Section(tr(R.string.settings_button))
+        Toggle(tr(R.string.opens_beam_panel), LauncherSettings.settingsKeyPanel, Modifier.fillMaxWidth()) {
+            LauncherSettings.settingsKeyPanel = !LauncherSettings.settingsKeyPanel
+        }
+        T(tr(R.string.settings_button_hint), 14.sp, color = PanelDim)
     }
-    T(tr(R.string.settings_button_hint), 14.sp, color = PanelDim)
     Section(tr(R.string.app_buttons))
     T(tr(R.string.app_buttons_hint), 14.sp, color = PanelDim)
     for (i in 0..3) {

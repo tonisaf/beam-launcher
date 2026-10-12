@@ -44,6 +44,7 @@ class AppRepository(private val context: Context) {
     private val pm = context.packageManager
     private val prefs = context.getSharedPreferences("tiles", Context.MODE_PRIVATE)
     private val artCache = ConcurrentHashMap<String, TileArt>()
+    private val roundCache = ConcurrentHashMap<String, TileArt>()
 
     private var hidden: Set<String>
         get() = prefs.getStringSet(KEY_HIDDEN, null) ?: DEFAULT_HIDDEN
@@ -118,6 +119,19 @@ class AppRepository(private val context: Context) {
         art?.also { artCache[cacheKey(entry)] = it }
     }
 
+    fun cachedRoundIcon(entry: AppEntry): TileArt? = roundCache[cacheKey(entry)]
+
+    /**
+     * The app's launcher icon for a round tile (Google TV style), never its TV banner. An adaptive
+     * icon is drawn the way the system's circular mask shows it: the visible middle of its layers
+     * fills the tile.
+     */
+    suspend fun loadRoundIcon(entry: AppEntry): TileArt? = withContext(Dispatchers.IO) {
+        roundCache[cacheKey(entry)]?.let { return@withContext it }
+        val art = runCatching { icon(entry, round = true) }.getOrNull()
+        art?.also { roundCache[cacheKey(entry)] = it }
+    }
+
     private fun cacheKey(entry: AppEntry) = "${entry.pkg}:${entry.updated}"
 
     private fun banner(entry: AppEntry): TileArt? {
@@ -141,9 +155,11 @@ class AppRepository(private val context: Context) {
         return TileArt(bitmap.asImageBitmap(), isBanner = true, top = edge, bottom = edge)
     }
 
-    private fun icon(entry: AppEntry): TileArt {
+    private fun icon(entry: AppEntry, round: Boolean = false): TileArt {
         val drawable = highResIcon(entry) ?: pm.getActivityIcon(entry.component)
-        if (drawable is AdaptiveIconDrawable) adaptiveTile(drawable)?.let { return it }
+        if (drawable is AdaptiveIconDrawable) {
+            adaptiveTile(drawable, if (round) ROUND_BLEED else SQUARE_BLEED, backdrop = round)?.let { return it }
+        }
         val bitmap = drawable.toBitmap(384, 384)
         val palette = Palette.from(bitmap).generate()
         var base = Color(
@@ -161,18 +177,32 @@ class AppRepository(private val context: Context) {
      * tile is the icon itself (like a Switch game cover) instead of a badge on a colored card.
      * Layers are 108dp with the visible icon in the middle 72dp; a slight zoom keeps the logo large.
      */
-    private fun adaptiveTile(icon: AdaptiveIconDrawable): TileArt? {
+    private fun adaptiveTile(icon: AdaptiveIconDrawable, bleedFraction: Float, backdrop: Boolean = false): TileArt? {
         val background = icon.background ?: return null
         val size = 432
         val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
-        val bleed = (size * 0.08f).toInt()
+        val bleed = (size * bleedFraction).toInt()
+        // An icon with no background of its own (Spotify's logo is a disc with the waves cut out)
+        // sits on a light backdrop, as in Google TV, instead of whatever lies behind the tile.
+        if (backdrop && isEmpty(background)) canvas.drawColor(BACKDROP)
         for (layer in listOfNotNull(background, icon.foreground)) {
             layer.setBounds(-bleed, -bleed, size + bleed, size + bleed)
             layer.draw(canvas)
         }
         val base = Color(Palette.from(bitmap).generate().getDominantColor(FALLBACK_TILE))
         return TileArt(bitmap.asImageBitmap(), isBanner = false, top = base, bottom = base, fullBleed = true)
+    }
+
+    /** True if a layer has next to nothing opaque in it. */
+    private fun isEmpty(layer: Drawable): Boolean {
+        val side = 24
+        val probe = Bitmap.createBitmap(side, side, Bitmap.Config.ARGB_8888)
+        layer.setBounds(0, 0, side, side)
+        layer.draw(Canvas(probe))
+        var opaque = 0
+        for (y in 0 until side) for (x in 0 until side) if (android.graphics.Color.alpha(probe.getPixel(x, y)) > 16) opaque++
+        return opaque < side * side / 20
     }
 
     private fun highResIcon(entry: AppEntry): Drawable? = runCatching {
@@ -194,6 +224,15 @@ class AppRepository(private val context: Context) {
         private const val KEY_PINNED = "pinned"
         private const val USAGE_WINDOW_MS = 60L * 24 * 60 * 60 * 1000
         private const val FALLBACK_TILE = 0xFF5A5A5A.toInt()
+
+        /** The light circle Google TV puts behind icons that have no background. */
+        private const val BACKDROP = 0xFFE8EAED.toInt()
+
+        /** How far an adaptive icon's layers are drawn past the tile: a little, for the square tiles. */
+        private const val SQUARE_BLEED = 0.08f
+
+        /** The layers are 108dp and the mask shows the middle 72dp, so a quarter each side puts that in the tile. */
+        private const val ROUND_BLEED = 0.25f
 
         /** XGIMI service apps and tools that are reachable from the top bar anyway. */
         private val DEFAULT_HIDDEN = setOf(

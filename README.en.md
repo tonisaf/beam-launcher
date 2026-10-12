@@ -21,7 +21,8 @@ refuses English as a system language. Voice commands are Russian only.
   tiles. Below it a second row with other apps' channels (SmartTube subscriptions, recent Spotify,
   "Continue watching"). Also a "Now playing" widget and the projector's battery level.
 - **Quick settings panel** over any app, opened with the remote's voice button: picture, sound,
-  appearance, Bluetooth (including searching for and pairing speakers), screensaver, power and
+  appearance, Wi-Fi (network, signal, networks in range; joining stays on XGIMI's page), Bluetooth
+  (including searching for and pairing speakers), screensaver, power and
   sleep timer, projection, keystone and picture size, XGIMI settings.
 - **App buttons on the remote**: the firmware hard-wires four buttons to Chinese video services;
   they can be assigned to any app, to the panel, or to "home".
@@ -30,6 +31,14 @@ refuses English as a system language. Voice commands are Russian only.
   interface sounds, interface language (system, Russian or English).
 
 ## Screenshots
+
+In Appearance → BEAM features, the XGIMI settings panel and voice assistant can be switched
+independently. Both default to on and persist across restarts. With the panel off, the remote's
+settings button and app buttons assigned to the panel open XGIMI quick settings. A short voice
+button press no longer opens BEAM; holding it still works if the assistant is enabled.
+BEAM settings remain accessible from the home palette icon to turn the panel back on. Switching the
+assistant off cancels recording and disables BEAM commands and dictation, keeping the downloaded
+model. These switches leave stock settings translation, the sleep timer and calibration available.
 
 The screenshots show the Russian interface.
 
@@ -162,6 +171,30 @@ panel. The four app buttons on the remote are assigned in the panel: "Remote but
   network, that any VPN is off, and that the IP is right. After a reboot or sleep of the projector, ADB
   may turn off: turn it on again in SystemUI Tuner (step 3).
 - **`unauthorized`:** confirm the debugging request on the projector's screen (step 5).
+- **The script finished without `[!!]`, but after a reboot a "choose an app" window opens, or not Beam:**
+  most likely another launcher also claims "Home" (ATV Launcher Pro, the Google TV launcher, Launcher
+  Manager and the like). Then "Always" is not remembered and `set-home-activity` does not help. See who
+  claims the home screen. In this case the script itself prints a yellow "Внимание: на «Домой» претендуют и
+  другие лаунчеры" ("Attention: other launchers also claim Home") line with their names, but disables
+  nothing. You can also list them by hand:
+
+  ```
+  adb shell cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME
+  ```
+
+  Only Beam (`com.home.tiles/.MainActivity`) and the settings' fallback `FallbackHome` (priority −1000)
+  should be there. Disable the others (nothing is uninstalled) and pin Beam:
+
+  ```
+  adb shell pm disable-user --user 0 LAUNCHER_PACKAGE
+  adb shell cmd package set-home-activity com.home.tiles/.MainActivity
+  adb reboot
+  ```
+
+  Check after boot: `adb shell cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME`
+  should return `com.home.tiles/.MainActivity` and `isDefault=true`. To bring a launcher back:
+  `adb shell pm enable PACKAGE`. It also helps to compare `adb shell pm list packages -d` before and
+  after a reboot: the stock launcher `com.xgimi.home` must stay in the disabled list.
 - **"Running scripts is disabled":** run it with `-ExecutionPolicy Bypass`, as in step 6.
 - **The script can't find adb:** check the path in `-Adb`.
 - **The script can't download the APKs:** check the internet connection. You can put the APKs from the
@@ -339,7 +372,7 @@ the way you'd expect: [docs/xgimi-firmware.en.md](docs/xgimi-firmware.en.md).
 ```sh
 adb shell am broadcast -n com.home.tiles/.AdbCommandReceiver --es background XMB --ez bg_animation true
 adb shell am broadcast -n com.home.tiles/.AdbCommandReceiver --es bt_name "XGIMI Play 6"
-adb shell am start -n com.home.tiles/.MicTestActivity --ei seconds 6   # test the remote's microphone
+adb shell am start -n com.home.tiles/.MicTestActivity --ei seconds 6   # test the remote's microphone (debug build only)
 ```
 
 ## License

@@ -36,7 +36,15 @@
         android:name="android.permission.WRITE_SETTINGS"
         tools:ignore="ProtectedPermissions" />
 
-    <!-- Only for MicTestActivity, the remote microphone experiment. -->
+    <!-- Defined by XGIMI's SystemUI with protection level "normal": lets Beam send the broadcast
+         that restarts the projector without showing the stock (Chinese) power menu. -->
+    <uses-permission android:name="com.xgimi.permission.system" />
+
+    <!-- The Wi-Fi page: the connection, and a fresh scan of the networks in range. -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+
+    <!-- Voice commands from the remote's microphone. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <uses-feature
@@ -153,13 +161,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        <!-- Diagnostic: records the microphone (does the remote's voice reach apps?). Shell-only via DUMP. -->
-        <activity
-            android:name=".MicTestActivity"
-            android:exported="true"
-            android:permission="android.permission.DUMP"
-            android:excludeFromRecents="true"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
         <!-- Started by the stub apps (:stub) when a remote shortcut key is pressed. -->
         <activity
             android:name=".RemoteButtonActivity"
