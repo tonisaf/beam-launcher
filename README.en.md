@@ -5,7 +5,7 @@ Android TV launcher with Switch and Google TV layouts, in Russian and English.
 ## Features
 
 - Apps, favorites, USB storage, preview channels, Continue Watching and Now Playing.
-- Network status and the standard Android battery indicator when a battery is present.
+- Network status and battery level (the read-only XGIMI API on the projector, standard Android API elsewhere).
 - Launcher settings from Home: theme, XMB background, language, layout, channels, sounds and voice.
 - Offline Vosk voice search, speech input in apps, app launch and media commands.
 

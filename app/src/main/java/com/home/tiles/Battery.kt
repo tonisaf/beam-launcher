@@ -32,6 +32,8 @@ import kotlinx.coroutines.withContext
 class BatteryInfo(val percent: Int, val charging: Boolean)
 
 private fun readBattery(context: android.content.Context): BatteryInfo? {
+    // This projector reports present=false through Android; its real battery is exposed by the vendor API.
+    readXgimiBattery()?.let { return it }
     val status = context.registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED)) ?: return null
     if (!status.getBooleanExtra(android.os.BatteryManager.EXTRA_PRESENT, false)) return null
     val level = status.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1)
@@ -39,6 +41,14 @@ private fun readBattery(context: android.content.Context): BatteryInfo? {
     if (level < 0 || scale <= 0) return null
     return BatteryInfo(level * 100 / scale, status.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, 0) != 0)
 }
+
+private fun readXgimiBattery(): BatteryInfo? = runCatching {
+    val cls = Class.forName("com.xgimi.gmpf.api.PowerManager")
+    val manager = cls.getMethod("getInstance").invoke(null)
+    val level = (cls.getMethod("getBatteryLevel").invoke(manager) as Number).toInt()
+    val charging = cls.getMethod("isAdapterPowered").invoke(manager) as? Boolean ?: false
+    if (level in 0..100) BatteryInfo(level, charging) else null
+}.getOrNull()
 
 @Composable
 private fun rememberBattery(): State<BatteryInfo?> {

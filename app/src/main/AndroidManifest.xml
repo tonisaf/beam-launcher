@@ -104,6 +104,8 @@
             </intent-filter>
         </activity>
 
+        <!-- Optional read-only battery API on XGIMI; Android reports no battery on this firmware. -->
+        <uses-library android:name="com.xgimi.api" android:required="false" />
         <!-- Receives the speech model zip over adb (content write); shell-only via DUMP. -->
         <provider
             android:name=".VoiceModelProvider"
