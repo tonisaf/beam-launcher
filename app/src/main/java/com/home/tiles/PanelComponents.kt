@@ -49,40 +49,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 
-// XGIMI's own panel: no sheet over the evenly dimmed picture, see-through grey tiles,
-// saturated blue focus with white text.
-internal val CardBg = Color(0x38FFFFFF)
-internal val FocusBg = Color(0xFF3B7CF5)
-internal val FocusText = Color.White
-/** Filled part of a focused slider or switch, drawn on [FocusBg]. */
-private val FocusFill = Color.White
-internal val Accent = Color(0xFF8AB4F8)
-/** Text on a tile that is switched on (light [Accent] fill). */
-internal val OnText = Color(0xFF0B1D36)
-internal val PanelText = Color(0xFFE8EAED)
-internal val PanelDim = Color(0xFFA8ACB3)
-/**
- * Projector: like XGIMI's panel, darkest along the panel's edge and fading across the picture
- * (theirs is on the left, ours on the right).
- */
-internal val TvScrim = Brush.horizontalGradient(
-    0f to Color(0x26000000),
-    0.5f to Color(0x8C000000),
-    1f to Color(0xD9000000),
-)
-
-internal val NoScrim = Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent))
+// The same neutral surfaces and inverse focus used by the Google TV home screen.
+internal val CardBg get() = Colors.Text.copy(alpha = 0.08f)
+internal val FocusBg get() = Colors.Text
+internal val FocusText get() = Colors.Background
+private val FocusFill get() = Colors.Background
+internal val Accent get() = Colors.Text
+internal val OnText get() = Colors.Background
+internal val PanelText get() = Colors.Text
+internal val PanelDim get() = Colors.TextDim
 
 @Composable
 internal fun Section(title: String) {
-    Spacer(Modifier.height(18.dp))
-    T(title, 14.sp, color = PanelDim)
+    Spacer(Modifier.height(24.dp))
+    T(title, 16.sp, color = PanelDim)
     Spacer(Modifier.height(10.dp))
 }
 
 @Composable
 internal fun PairRow(content: @Composable RowScope.() -> Unit) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp), content = content)
+    Row(Modifier.fillMaxWidth().padding(bottom = 10.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), content = content)
 }
 
 /** A full-width row that runs an action, with a chevron like Google TV's list entries. */
@@ -95,7 +81,7 @@ internal fun ListRow(text: String, onClick: () -> Unit) {
             .padding(bottom = 8.dp)
             .fillMaxWidth()
             .height(56.dp)
-            .background(if (focused) FocusBg else CardBg, RoundedCornerShape(16.dp))
+            .background(if (focused) FocusBg else CardBg, RoundedCornerShape(28.dp))
             .panelControl({ focused = it }, onClick)
             .padding(horizontal = 18.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -129,8 +115,8 @@ internal fun Chip(
     val fg = if (focused) FocusText else if (selected) PanelText else PanelDim
     Row(
         modifier
-            .height(52.dp)
-            .background(if (focused) FocusBg else CardBg, RoundedCornerShape(16.dp))
+            .height(56.dp)
+            .background(if (focused) FocusBg else CardBg, RoundedCornerShape(28.dp))
             // Disabled chips stay focusable so the grid doesn't jump, but do nothing.
             .panelControl({ focused = it }) { if (enabled) onClick() }
             .padding(horizontal = 16.dp),
@@ -163,7 +149,7 @@ internal fun Swatch(brush: Brush, selected: Boolean, onClick: () -> Unit) {
                 when {
                     focused -> Modifier.border(3.dp, FocusBg, shape)
                     selected -> Modifier.border(3.dp, Accent, shape)
-                    else -> Modifier.border(1.dp, Color(0x33FFFFFF), shape)
+                    else -> Modifier.border(1.dp, Colors.Text.copy(alpha = 0.2f), shape)
                 },
             )
             .panelControl({ focused = it }, onClick),
@@ -184,7 +170,7 @@ internal fun Toggle(text: String, checked: Boolean, modifier: Modifier, onClick:
     Row(
         modifier
             .height(56.dp)
-            .background(if (focused) FocusBg else CardBg, RoundedCornerShape(16.dp))
+            .background(if (focused) FocusBg else CardBg, RoundedCornerShape(28.dp))
             .panelControl({ focused = it }, onClick)
             .padding(horizontal = 18.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -232,7 +218,7 @@ internal fun LevelSlider(
     Row(
         modifier
             .height(54.dp)
-            .background(if (focused) FocusBg else CardBg, RoundedCornerShape(16.dp))
+            .background(if (focused) FocusBg else CardBg, RoundedCornerShape(28.dp))
             .onPreviewKeyEvent { event ->
                 val code = event.nativeKeyEvent.keyCode
                 if (code != AndroidKeyEvent.KEYCODE_DPAD_LEFT && code != AndroidKeyEvent.KEYCODE_DPAD_RIGHT) {
@@ -291,7 +277,7 @@ internal fun Selector(label: String, value: String, modifier: Modifier, onChange
     Row(
         modifier
             .height(54.dp)
-            .background(if (focused) FocusBg else CardBg, RoundedCornerShape(16.dp))
+            .background(if (focused) FocusBg else CardBg, RoundedCornerShape(28.dp))
             .onPreviewKeyEvent { event ->
                 val code = event.nativeKeyEvent.keyCode
                 if (code != AndroidKeyEvent.KEYCODE_DPAD_LEFT && code != AndroidKeyEvent.KEYCODE_DPAD_RIGHT) {
@@ -349,7 +335,7 @@ internal fun ColorDot(color: Color, selected: Boolean, onClick: () -> Unit) {
 /** A card of "name  value" lines, for read-only facts. */
 @Composable
 internal fun FactsCard(rows: List<Pair<String, String>>) {
-    Column(Modifier.fillMaxWidth().background(CardBg, RoundedCornerShape(16.dp)).padding(horizontal = 18.dp, vertical = 12.dp)) {
+    Column(Modifier.fillMaxWidth().background(CardBg, RoundedCornerShape(28.dp)).padding(horizontal = 18.dp, vertical = 12.dp)) {
         rows.forEach { (label, value) ->
             Row(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
                 T(label, 15.sp, color = PanelDim)
