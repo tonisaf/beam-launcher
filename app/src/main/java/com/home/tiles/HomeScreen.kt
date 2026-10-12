@@ -34,11 +34,10 @@ import androidx.compose.ui.unit.dp
 // The row is centred in the space under the top bar; this lifts it to just above the screen's middle.
 private val RowLift = 150.dp
 
-/** One tile in the home row. Special tiles (drive, HDMI) come before the apps. */
+/** One tile in the home row. Special tiles (drive) come before the apps. */
 internal sealed class RowItem(val key: String, val title: String, val subtitle: String = "") {
     class App(val entry: AppEntry) : RowItem(entry.pkg, entry.label)
     class Usb(val drive: UsbDrive) : RowItem("usb:${drive.key}", tr(R.string.usb_drive), drive.label)
-    class Hdmi(val input: Xgimi.Input) : RowItem("hdmi:${input.id}", input.label, if (input.device != null) "HDMI" else tr(R.string.device_connected))
     class All(count: Int) : RowItem("__all__", tr(R.string.all_apps), tr(R.string.apps_count, count))
 }
 
@@ -59,10 +58,8 @@ fun HomeScreen(
     val showContinue = secondRow != null
     LaunchedEffect(resumeTick) { context.requestChannelRefresh() }
     val drives by rememberUsbDrives()
-    val hdmi by rememberLiveHdmi()
     val items = buildList {
         if (LauncherSettings.usbTile) drives.forEach { add(RowItem.Usb(it)) }
-        if (LauncherSettings.hdmiTile) hdmi.forEach { add(RowItem.Hdmi(it)) }
         apps.filter { !it.hidden }.forEach { add(RowItem.App(it)) }
         add(RowItem.All(apps.size))
     }
@@ -70,7 +67,6 @@ fun HomeScreen(
     fun clickFor(item: RowItem): () -> Unit = when (item) {
         is RowItem.App -> { { context.launchApp(item.entry) } }
         is RowItem.Usb -> { { context.launchPackage(FILE_MANAGER) } }
-        is RowItem.Hdmi -> { { Xgimi.openInput(context, item.input) } }
         is RowItem.All -> onOpenAll
     }
     fun longClickFor(item: RowItem): () -> Unit = { if (item is RowItem.App) onOptions(item.entry) }
@@ -108,7 +104,6 @@ internal fun RowItemArt(repo: AppRepository, item: RowItem) {
             AppArt(art, item.entry.label)
         }
         is RowItem.Usb -> UsbArt()
-        is RowItem.Hdmi -> HdmiArt()
         is RowItem.All -> AllAppsArt()
     }
 }

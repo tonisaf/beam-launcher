@@ -73,9 +73,7 @@ object Setup {
         grant("location", Manifest.permission.ACCESS_FINE_LOCATION, R.string.setup_location, R.string.setup_location_effect)
         if (LauncherSettings.voiceAssistantEnabled)
             grant("mic", Manifest.permission.RECORD_AUDIO, R.string.setup_mic, R.string.setup_mic_effect)
-        if (!Settings.System.canWrite(context)) {
-            add(Item("write", tr(R.string.setup_write), tr(R.string.setup_write_effect), "adb shell appops set $PKG WRITE_SETTINGS allow"))
-        }
+
         // Null when the system doesn't show us the default home (package visibility): say nothing then.
         val home = context.packageManager
             .resolveActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), PackageManager.MATCH_DEFAULT_ONLY)

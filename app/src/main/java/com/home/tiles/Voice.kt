@@ -357,7 +357,6 @@ internal fun trimRemoteClick(all: ShortArray, rate: Int): ShortArray {
 object VoiceCommands {
     private class Command(val phrases: List<String>, val run: (Context) -> String)
 
-    private val numbers = listOf("один", "два", "три", "четыре", "пять", "шесть", "семь", "восемь", "девять", "десять")
 
     /** The commands that need no app; the apps' own come from [VoiceApps] (see [commandsFor]). */
     private val fixedCommands: List<Command> by lazy {
@@ -372,30 +371,9 @@ object VoiceCommands {
                 )
                 "Главный экран"
             }
-            cmd("эйч ди эм ай", "приставка", "включи приставку") { ctx ->
-                Xgimi.hdmiInputs(ctx).firstOrNull()?.let { Xgimi.openInput(ctx, it); "HDMI" } ?: "HDMI не найден"
-            }
             cmd("настройки", "панель") {
-                if (!LauncherSettings.overlayPanelEnabled) it.openQuickPanel() else PanelOverlay.show()
+                it.startActivity(android.content.Intent(it, OpenPanelActivity::class.java).addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK))
                 "Панель"
-            }
-
-            numbers.forEachIndexed { i, word ->
-                cmd("яркость $word") { Lumens.setLevel(i + 1); "Яркость ${i + 1}" }
-            }
-            cmd("ярче", "сделай ярче") { val l = ((Lumens.level() ?: 8) + 2).coerceAtMost(Lumens.MAX); Lumens.setLevel(l); "Яркость $l" }
-            cmd("темнее", "сделай темнее") { val l = ((Lumens.level() ?: 8) - 2).coerceAtLeast(1); Lumens.setLevel(l); "Яркость $l" }
-            cmd("эко режим", "включи эко режим", "экономный режим") { Eco.set(true); "Эко-режим включён" }
-            cmd("выключи эко режим", "обычная яркость") { Eco.set(false); "Эко-режим выключен" }
-
-            listOf(
-                "кино" to 1, "фильм" to 1, "спорт" to 9, "телевизор" to 7, "офис" to 25,
-                "пользовательский" to 3, "умный" to 16, "автоматический" to 16,
-            ).forEach { (word, mode) ->
-                cmd("режим $word", "$word режим") { ctx ->
-                    Xgimi.setPictureMode(ctx, mode)
-                    "Режим: " + (Xgimi.pictureModes.firstOrNull { it.second == mode }?.first ?: word)
-                }
             }
 
             cmd("громче", "сделай громче") { ctx -> volume(ctx, android.media.AudioManager.ADJUST_RAISE); "Громче" }
@@ -406,8 +384,6 @@ object VoiceCommands {
             cmd("следующий", "следующий трек", "дальше") { ctx -> media(ctx, android.view.KeyEvent.KEYCODE_MEDIA_NEXT); "Следующий" }
             cmd("предыдущий", "предыдущий трек") { ctx -> media(ctx, android.view.KeyEvent.KEYCODE_MEDIA_PREVIOUS); "Предыдущий" }
 
-            cmd("фокус", "автофокус") { ctx -> Xgimi.autoFocus(ctx); "Автофокус" }
-            cmd("трапеция", "выровняй", "выровняй картинку") { ctx -> Xgimi.autoKeystone(ctx); "Трапеция" }
         }
     }
 

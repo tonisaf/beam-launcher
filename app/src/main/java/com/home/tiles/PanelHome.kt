@@ -22,15 +22,9 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** Look (theme, background, language) and what the home screen shows, then the firmware's start-up and HDMI settings. */
+/** Launcher appearance, voice and home screen preferences. */
 @Composable
-internal fun AppearancePage(onHdmiPage: () -> Unit) {
-    Section(tr(R.string.beam_features))
-    Toggle(tr(R.string.beam_panel_enabled), LauncherSettings.overlayPanelEnabled, Modifier.fillMaxWidth()) {
-        LauncherSettings.overlayPanelEnabled = !LauncherSettings.overlayPanelEnabled
-    }
-    T(tr(R.string.beam_panel_enabled_hint), 14.sp, color = PanelDim, maxLines = 4)
-    Spacer(Modifier.height(10.dp))
+internal fun AppearancePage() {
     Toggle(tr(R.string.voice_assistant_enabled), LauncherSettings.voiceAssistantEnabled, Modifier.fillMaxWidth()) {
         LauncherSettings.voiceAssistantEnabled = !LauncherSettings.voiceAssistantEnabled
     }
@@ -58,51 +52,6 @@ internal fun AppearancePage(onHdmiPage: () -> Unit) {
         Chip("English", AppLanguage.current == AppLanguage.EN, Modifier.weight(1f)) { AppLanguage.current = AppLanguage.EN }
     }
     HomeScreenSettings()
-    HdmiSection(onHdmiPage)
-}
-
-/** Where the projector starts, the firmware's HDMI auto switch, and a link to its HDMI page (CEC). */
-@Composable
-private fun HdmiSection(onHdmiPage: () -> Unit) {
-    val context = LocalContext.current
-    val autoSwitch = rememberFirmwareState { Hdmi.autoSwitch() }
-    val bootState = rememberFirmwareState { Hdmi.bootToHdmi() }
-    val cec = rememberFirmwareState { Cec.control(context) }
-    val cecWake = rememberFirmwareState { Cec.wakeUp() }
-    val bootHdmi = bootState.value ?: false
-    Section(tr(R.string.on_power_on))
-    PairRow {
-        Chip(tr(R.string.home_screen), !bootHdmi, Modifier.weight(1f)) {
-            bootState.change(false) { Hdmi.setBootToHdmi(context, false) }
-        }
-        Chip("HDMI", bootHdmi, Modifier.weight(1f), note = tr(R.string.if_connected)) {
-            bootState.change(true) { Hdmi.setBootToHdmi(context, true) }
-        }
-    }
-    autoSwitch.value?.let { on ->
-        Spacer(Modifier.height(10.dp))
-        Toggle(tr(R.string.hdmi_on_connect), on, Modifier.fillMaxWidth()) {
-            autoSwitch.change(!on) { Hdmi.setAutoSwitch(!on) }
-        }
-    }
-    cec.value?.let { on ->
-        Section("HDMI‑CEC")
-        Toggle(tr(R.string.hdmi_cec_control), on, Modifier.fillMaxWidth()) {
-            cec.change(!on) { Cec.setControl(context, !on) }
-            // Turning the control off turns the wake-up off too: ask the firmware what it ended up with.
-            cecWake.value?.let { wake -> cecWake.change(if (on) false else wake) {} }
-        }
-        T(tr(R.string.hdmi_cec_hint), 14.sp, color = PanelDim)
-        if (on) cecWake.value?.let { wake ->
-            Spacer(Modifier.height(10.dp))
-            Toggle(tr(R.string.hdmi_wakes), wake, Modifier.fillMaxWidth()) {
-                cecWake.change(!wake) { Cec.setWakeUp(context, !wake) }
-            }
-            T(tr(R.string.hdmi_wakes_hint), 14.sp, color = PanelDim)
-        }
-    }
-    Spacer(Modifier.height(10.dp))
-    ListRow(tr(R.string.hdmi_more), onHdmiPage)
 }
 
 @Composable
@@ -128,10 +77,6 @@ private fun HomeScreenSettings() {
     Toggle(tr(R.string.usb_tile), LauncherSettings.usbTile, Modifier.fillMaxWidth()) {
         LauncherSettings.usbTile = !LauncherSettings.usbTile
     }
-    Spacer(Modifier.height(10.dp))
-    Toggle(tr(R.string.hdmi_tile), LauncherSettings.hdmiTile, Modifier.fillMaxWidth()) {
-        LauncherSettings.hdmiTile = !LauncherSettings.hdmiTile
-    }
     Section(tr(R.string.second_row))
     PairRow {
         Chip(tr(R.string.auto), LauncherSettings.secondRow == SECOND_ROW_AUTO, Modifier.weight(1f)) {
@@ -147,58 +92,6 @@ private fun HomeScreenSettings() {
             LauncherSettings.secondRow = channel.key
         }
     }
-}
-
-/** Assigns the remote's four shortcut keys; left/right cycles the action, like XGIMI's selectors. */
-@Composable
-internal fun RemoteButtonsSection() {
-    val context = LocalContext.current
-    val choices by produceState(listOf("" to tr(R.string.nothing), RemoteButtons.PANEL to tr(R.string.this_panel), RemoteButtons.HOME to tr(R.string.home_screen))) {
-        val apps = withContext(Dispatchers.IO) { AppRepository(context).loadApps().sortedBy { it.label.lowercase() } }
-        value = value + apps.map { RemoteButtons.app(it.pkg) to it.label }
-    }
-    val requesters = remember { List(4) { FocusRequester() } }
-    val pressed = RemoteButtons.lastPressed.intValue
-    LaunchedEffect(pressed) {
-        if (pressed >= 0) {
-            runCatching { requesters[pressed].requestFocus() }
-            RemoteButtons.lastPressed.intValue = -1
-        }
-    }
-
-    if (LauncherSettings.overlayPanelEnabled) {
-        Section(tr(R.string.settings_button))
-        Toggle(tr(R.string.opens_beam_panel), LauncherSettings.settingsKeyPanel, Modifier.fillMaxWidth()) {
-            LauncherSettings.settingsKeyPanel = !LauncherSettings.settingsKeyPanel
-        }
-        T(tr(R.string.settings_button_hint), 14.sp, color = PanelDim)
-    }
-    Section(tr(R.string.app_buttons))
-    T(tr(R.string.app_buttons_hint), 14.sp, color = PanelDim)
-    for (i in 0..3) {
-        Spacer(Modifier.height(12.dp))
-        Row(Modifier.fillMaxWidth()) {
-            val current = RemoteButtons.actions[i]
-            // An assignment that isn't in the list yet (the apps are still loading) or any more
-            // (the app was removed) is shown as it is, and ← → step from it: not from "Ничего".
-            val options = if (choices.any { it.first == current }) choices else choices + (current to assignedLabel(context, current))
-            val index = options.indexOfFirst { it.first == current }
-            Selector(
-                label = tr(R.string.button_n, i + 1),
-                value = options[index].second,
-                modifier = Modifier.weight(1f).focusRequester(requesters[i]),
-            ) { delta ->
-                RemoteButtons.set(i, options[(index + delta).mod(options.size)].first)
-            }
-        }
-    }
-}
-
-/** What a button assigned to [action] is called: the app's label, or its package if it is gone. */
-private fun assignedLabel(context: android.content.Context, action: String): String {
-    val pkg = RemoteButtons.packageOf(action) ?: return tr(R.string.nothing)
-    val pm = context.packageManager
-    return runCatching { pm.getApplicationLabel(pm.getApplicationInfo(pkg, 0)).toString() }.getOrDefault(tr(R.string.pkg_missing, pkg))
 }
 
 /** XMB colour (by month like the PS3, or fixed) and the animation switch. */

@@ -7,37 +7,20 @@ import android.graphics.PixelFormat
 import android.graphics.drawable.GradientDrawable
 import android.os.Handler
 import android.os.Looper
-import android.os.SystemClock
 import android.util.Log
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.WindowManager
 import android.view.accessibility.AccessibilityEvent
 import android.widget.TextView
-import androidx.compose.ui.platform.ComposeView
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LifecycleRegistry
-import androidx.lifecycle.setViewTreeLifecycleOwner
-import androidx.savedstate.SavedStateRegistry
-import androidx.savedstate.SavedStateRegistryController
-import androidx.savedstate.SavedStateRegistryOwner
-import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 
-/**
- * Shows [PanelScreen] over whatever app is on screen. As an accessibility service it can both
- * catch the remote's voice key (F5, unused by the firmware) system-wide and add an overlay
- * window without the "draw over other apps" permission.
- */
+/** Receives the voice key and shows non-focusable speech captions. */
 class PanelOverlay : AccessibilityService() {
-    private var view: ComposeView? = null
-    private var owner: OverlayOwner? = null
     private val handler = Handler(Looper.getMainLooper())
     // One WindowManager for adding and removing the overlay windows.
     private val windows by lazy { getSystemService(WindowManager::class.java) }
-    private var panelParams: WindowManager.LayoutParams? = null
 
-    // Voice key: a short press toggles the panel, holding it speaks a command.
+    // Holding the voice key speaks a command; a short press has no settings action.
     private var voice: VoiceSession? = null
     private var listening = false
     private var bubble: TextView? = null
@@ -53,69 +36,23 @@ class PanelOverlay : AccessibilityService() {
     override fun onServiceConnected() {
         instance = this
         LauncherSettings.init(this)
-        RemoteButtons.init(this)
         Sounds.init(this)
-        XgimiService.bind(this)
-        SleepTimer.init(this)
-        // Turned off early: the sleep timer must not fire right after the next power-on.
-        registerReceiver(screenOff, android.content.IntentFilter(Intent.ACTION_SCREEN_OFF))
-    }
-
-    private val screenOff = object : android.content.BroadcastReceiver() {
-        override fun onReceive(context: android.content.Context, intent: Intent) {
-            SleepTimer.cancel(context)
-        }
     }
 
     override fun onKeyEvent(event: KeyEvent): Boolean {
         val firstDown = event.action == KeyEvent.ACTION_DOWN && event.repeatCount == 0
         // The four shortcut keys never get here: the firmware consumes them before accessibility
         // services see them (see the stub module).
-        KeystoneActivity.volumeKeys?.let { resize ->
-            val up = event.keyCode == KeyEvent.KEYCODE_VOLUME_UP
-            if (up || event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
-                if (event.action == KeyEvent.ACTION_DOWN) handler.post { resize(up) }
-                return true
-            }
-        }
-        if (event.keyCode == SETTINGS_KEY && LauncherSettings.overlayPanelEnabled && LauncherSettings.settingsKeyPanel) {
-            if (firstDown) handler.post {
-                if (!LauncherSettings.overlayPanelEnabled) return@post
-                if (view == null) showPanel() else hidePanel()
-                closeStockQuickSettings()
-            }
-            return true
-        }
         if (event.keyCode != KeyEvent.KEYCODE_F5) return false
-        if (!LauncherSettings.overlayPanelEnabled && !LauncherSettings.voiceAssistantEnabled) return false
+        if (!LauncherSettings.voiceAssistantEnabled) return false
         // Answer at once and do the work afterwards: if this call takes too long (~0.5 s, e.g.
         // while the launcher in this same process is busy), the system also hands the key to the
-        // foreground app, and the launcher would open its own copy of the panel.
+        // foreground app as well.
         when {
             firstDown -> handler.post(::voiceKeyDown)
             event.action == KeyEvent.ACTION_UP -> handler.post(::voiceKeyUp)
         }
         return true
-    }
-
-    /**
-     * XGIMI's window manager starts its quick settings on the settings key before accessibility
-     * services can swallow it, and the component can't be disabled over adb. Its window closes on
-     * CLOSE_SYSTEM_DIALOGS (any reason but its own), and appears a moment after the key, so the
-     * broadcast goes out a few times.
-     */
-    private fun closeStockQuickSettings() {
-        closeStockUntil = SystemClock.uptimeMillis() + 1500
-        for (delay in longArrayOf(60, 150, 300, 500, 800, 1200)) handler.postDelayed(::sendCloseDialogs, delay)
-    }
-
-    /** While [closeStockUntil]: any window appearing is most likely XGIMI's quick settings. */
-    private var closeStockUntil = 0L
-
-    private fun sendCloseDialogs() {
-        if (!LauncherSettings.overlayPanelEnabled) return
-        @Suppress("DEPRECATION")
-        sendBroadcast(Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS).putExtra("reason", "beam"))
     }
 
     /**
@@ -145,7 +82,6 @@ class PanelOverlay : AccessibilityService() {
         voice = null
         if (!listening) {
             session?.cancel()
-            if (view == null) showPanel() else hidePanel()
             return
         }
         listening = false
@@ -207,78 +143,22 @@ class PanelOverlay : AccessibilityService() {
         runCatching { windows.removeViewImmediate(label) }
     }
 
-    private fun showPanel() {
-        if (!LauncherSettings.overlayPanelEnabled || view != null) return
-        val owner = OverlayOwner().also { this.owner = it }
-        val composeView = ComposeView(this).apply {
-            setViewTreeLifecycleOwner(owner)
-            setViewTreeSavedStateRegistryOwner(owner)
-            setContent { PanelScreen(onDismiss = ::hidePanel) }
-        }
-        val params = WindowManager.LayoutParams(
-            WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.MATCH_PARENT,
-            WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY,
-            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-            PixelFormat.TRANSLUCENT,
-        ).apply { windowAnimations = 0 }
-        val added = runCatching { windows.addView(composeView, params) }
-            .onFailure { Log.w("PanelOverlay", "Panel window failed", it) }
-            .isSuccess
-        if (!added) {
-            owner.destroy()
-            this.owner = null
-            return
-        }
-        owner.resume()
-        view = composeView
-        panelParams = params
-    }
-
-    /**
-     * Removes the panel window. It must never outlive the panel: an empty, surface-less overlay
-     * window once stayed registered with the window manager and kept the input focus, so the remote
-     * controlled nothing until a reboot. It's made non-focusable first, then removed immediately.
-     */
-    private fun hidePanel() {
-        val composeView = view ?: return
-        view = null
-        panelParams?.let { params ->
-            params.flags = params.flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-            runCatching { windows.updateViewLayout(composeView, params) }
-        }
-        panelParams = null
-        runCatching { windows.removeViewImmediate(composeView) }
-            .onFailure { Log.w("PanelOverlay", "Panel window removal failed", it) }
-        owner?.destroy()
-        owner = null
-    }
-
-    override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        // Close the stock quick settings the moment their window shows up, not at the next timer.
-        if (event != null && SystemClock.uptimeMillis() < closeStockUntil &&
-            (event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED || event.packageName == STOCK_SETTINGS)
-        ) sendCloseDialogs()
-    }
+    override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
 
     override fun onInterrupt() {}
 
     // The system is tearing the service down (e.g. AccessibilityGuard restarting it): close the
-    // panel while its window token is still valid, so the window can't be left behind.
+    // captions while the accessibility window token is still valid.
     override fun onUnbind(intent: android.content.Intent?): Boolean {
         hideBubble()
-        hidePanel()
         if (instance === this) instance = null
         return super.onUnbind(intent)
     }
 
     override fun onDestroy() {
-        runCatching { unregisterReceiver(screenOff) }
         voice?.cancel()
         handler.removeCallbacksAndMessages(null)
         hideBubble()
-        hidePanel()
         if (instance === this) instance = null
         super.onDestroy()
     }
@@ -287,9 +167,6 @@ class PanelOverlay : AccessibilityService() {
         /** Holding the voice key this long turns the press into a voice command. */
         private const val HOLD_MS = 1000L
 
-        /** The remote's gear key; XGIMI's system UI opens its quick settings on it. */
-        const val SETTINGS_KEY = KeyEvent.KEYCODE_MOVE_HOME
-        private const val STOCK_SETTINGS = "com.android.newsettings"
 
         @Volatile
         private var instance: PanelOverlay? = null
@@ -308,17 +185,14 @@ class PanelOverlay : AccessibilityService() {
         /** One of the system's global actions (lock screen, power dialog, ...); false when the service isn't running. */
         fun globalAction(action: Int): Boolean = instance?.performGlobalAction(action) == true
 
-        /** Whether the service is connected, so it (not the launcher) handles the panel key. */
+        /** Whether the service is connected, so it handles the voice key. */
         val running get() = instance != null
 
-        /** Apply switches without disconnecting accessibility (sleep and calibration still use it). */
+        /** Apply the voice preference without disconnecting accessibility. */
         fun featuresChanged() {
             val service = instance ?: return
             val apply = Runnable {
-                if (!LauncherSettings.overlayPanelEnabled) {
-                    service.closeStockUntil = 0L
-                    service.hidePanel()
-                }
+
                 if (!LauncherSettings.voiceAssistantEnabled) {
                     service.handler.removeCallbacks(service.startListening)
                     service.voice?.cancel()
@@ -331,42 +205,5 @@ class PanelOverlay : AccessibilityService() {
             if (Looper.myLooper() == Looper.getMainLooper()) apply.run() else service.handler.post(apply)
         }
 
-        /**
-         * Opens the panel over the current app; false when the service isn't enabled. Safe from any
-         * thread: the window is added on the main thread.
-         */
-        fun show(): Boolean {
-            if (!LauncherSettings.overlayPanelEnabled) return false
-            val service = instance ?: return false
-            service.handler.post { service.showPanel() }
-            return true
-        }
-    }
-}
-
-/** Whether the panel is on screen (in the launcher or as the overlay). */
-object PanelState {
-    @Volatile
-    var open = false
-}
-
-/** Minimal lifecycle + saved-state owner so Compose can run in a window without an activity. */
-private class OverlayOwner : LifecycleOwner, SavedStateRegistryOwner {
-    private val registry = LifecycleRegistry(this)
-    private val savedState = SavedStateRegistryController.create(this)
-
-    override val lifecycle: Lifecycle get() = registry
-    override val savedStateRegistry: SavedStateRegistry get() = savedState.savedStateRegistry
-
-    init {
-        savedState.performRestore(null)
-    }
-
-    fun resume() {
-        registry.currentState = Lifecycle.State.RESUMED
-    }
-
-    fun destroy() {
-        registry.currentState = Lifecycle.State.DESTROYED
     }
 }

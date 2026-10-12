@@ -31,25 +31,23 @@ import kotlinx.coroutines.withContext
 
 class BatteryInfo(val percent: Int, val charging: Boolean)
 
-/**
- * The XGIMI projector's Android battery service is a stub ("not present", always 100%); the real
- * pack is behind com.xgimi.gmpf.api.PowerManager in the com.xgimi.api platform library.
- * Reflection, because that library only exists on XGIMI firmware. Null if unavailable.
- */
-private fun readXgimiBattery(): BatteryInfo? = runCatching {
-    val cls = Class.forName("com.xgimi.gmpf.api.PowerManager")
-    val pm = cls.getMethod("getInstance").invoke(null)
-    val level = (cls.getMethod("getBatteryLevel").invoke(pm) as Number).toInt()
-    val adapter = cls.getMethod("isAdapterPowered").invoke(pm) as? Boolean ?: false
-    if (level in 0..100) BatteryInfo(level, charging = adapter) else null
-}.onFailure { android.util.Log.w("Battery", "XGIMI battery unavailable", it) }.getOrNull()
+private fun readBattery(context: android.content.Context): BatteryInfo? {
+    val status = context.registerReceiver(null, android.content.IntentFilter(android.content.Intent.ACTION_BATTERY_CHANGED)) ?: return null
+    if (!status.getBooleanExtra(android.os.BatteryManager.EXTRA_PRESENT, false)) return null
+    val level = status.getIntExtra(android.os.BatteryManager.EXTRA_LEVEL, -1)
+    val scale = status.getIntExtra(android.os.BatteryManager.EXTRA_SCALE, -1)
+    if (level < 0 || scale <= 0) return null
+    return BatteryInfo(level * 100 / scale, status.getIntExtra(android.os.BatteryManager.EXTRA_PLUGGED, 0) != 0)
+}
 
-/** No change broadcasts from the XGIMI side, so poll; a battery drains slowly. */
 @Composable
-private fun rememberBattery(): State<BatteryInfo?> = produceState(readXgimiBattery()) {
-    while (true) {
-        delay(60_000)
-        value = withContext(Dispatchers.IO) { readXgimiBattery() }
+private fun rememberBattery(): State<BatteryInfo?> {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    return produceState< BatteryInfo? >(null, context) {
+        while (true) {
+            value = withContext(Dispatchers.IO) { readBattery(context) }
+            delay(60_000)
+        }
     }
 }
 

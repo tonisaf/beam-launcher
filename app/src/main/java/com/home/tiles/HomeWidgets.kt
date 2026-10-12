@@ -225,31 +225,6 @@ private fun queryUsbDrives(context: Context): List<UsbDrive> = runCatching {
         .map { UsbDrive(it.uuid ?: it.getDescription(context), it.getDescription(context)) }
 }.getOrDefault(emptyList())
 
-// ---- HDMI ----
-
-/** HDMI inputs with a live signal (a powered-on device on the cable). */
-@Composable
-fun rememberLiveHdmi(): State<List<Xgimi.Input>> {
-    val context = LocalContext.current
-    return produceState(queryLiveHdmi(context)) {
-        val tv = context.getSystemService(TvInputManager::class.java)
-        val callback = object : TvInputManager.TvInputCallback() {
-            override fun onInputStateChanged(inputId: String, state: Int) { value = queryLiveHdmi(context) }
-            override fun onInputAdded(inputId: String) { value = queryLiveHdmi(context) }
-            override fun onInputRemoved(inputId: String) { value = queryLiveHdmi(context) }
-        }
-        tv?.registerCallback(callback, Handler(Looper.getMainLooper()))
-        awaitDispose { tv?.unregisterCallback(callback) }
-    }
-}
-
-private fun queryLiveHdmi(context: Context): List<Xgimi.Input> {
-    val tv = context.getSystemService(TvInputManager::class.java) ?: return emptyList()
-    return Xgimi.hdmiInputs(context).filter {
-        runCatching { tv.getInputState(it.id) }.getOrNull() == TvInputManager.INPUT_STATE_CONNECTED
-    }
-}
-
 // ---- Tile art for the special tiles ----
 
 @Composable

@@ -21,9 +21,7 @@
     <uses-permission android:name="android.permission.READ_TV_LISTINGS" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-    <!-- Bluetooth discovery (BluetoothScan); runtime permission granted over adb. -->
+    <!-- Location permission lets Android disclose the connected Wi-Fi network name. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <!-- Android 12+ lets the user grant only this one; the pair is required for fine location. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -31,16 +29,8 @@
     <uses-permission
         android:name="android.permission.WRITE_SECURE_SETTINGS"
         tools:ignore="ProtectedPermissions" />
-    <!-- App op granted over adb: the screensaver delay (screen_off_timeout). -->
-    <uses-permission
-        android:name="android.permission.WRITE_SETTINGS"
-        tools:ignore="ProtectedPermissions" />
 
-    <!-- Defined by XGIMI's SystemUI with protection level "normal": lets Beam send the broadcast
-         that restarts the projector without showing the stock (Chinese) power menu. -->
-    <uses-permission android:name="com.xgimi.permission.system" />
-
-    <!-- The Wi-Fi page: the connection, and a fresh scan of the networks in range. -->
+    <!-- Wi-Fi status displayed by the launcher. -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
 
@@ -93,21 +83,6 @@
             </intent-filter>
         </service>
 
-        <!-- Full-screen keystone, size and tilt setup over whatever is running. -->
-        <activity
-            android:name=".KeystoneActivity"
-            android:excludeFromRecents="true"
-            android:exported="false"
-            android:noHistory="true"
-            android:screenOrientation="landscape"
-            android:taskAffinity=""
-            android:theme="@style/Theme.Tiles" />
-
-        <!-- Sleep timer alarms (SleepTimer). -->
-        <receiver
-            android:name=".SleepTimerReceiver"
-            android:exported="false" />
-
         <receiver
             android:name=".AdbCommandReceiver"
             android:exported="true"
@@ -128,10 +103,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        <!-- XGIMI's public platform library: real battery level (the Android battery service reports none). -->
-        <uses-library
-            android:name="com.xgimi.api"
-            android:required="false" />
+
         <!-- Receives the speech model zip over adb (content write); shell-only via DUMP. -->
         <provider
             android:name=".VoiceModelProvider"
@@ -171,12 +143,12 @@
             android:taskAffinity=""
             android:theme="@android:style/Theme.NoDisplay" />
 
-        <!-- Catches the remote's voice key everywhere and draws the panel over the current app.
+        <!-- Catches the voice key and shows speech captions over the current app.
              Enabled over adb (settings put secure enabled_accessibility_services ...). -->
         <service
             android:name=".PanelOverlay"
             android:exported="true"
-            android:label="Beam: панель"
+            android:label="Beam: голос"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />

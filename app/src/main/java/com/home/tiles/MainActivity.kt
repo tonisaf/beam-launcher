@@ -41,7 +41,6 @@ class MainActivity : ComponentActivity() {
         RemoteButtons.init(this)
         AccessibilityGuard.ensure(this)
         Sounds.init(this)
-        Hdmi.migrateBootSource(this)
         setContent {
             LauncherApp(repo, apps.value, resumeTick.intValue, PanelRequests.count.intValue, onChanged = ::reload)
         }
@@ -93,14 +92,10 @@ object PanelRequests {
 class OpenPanelActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Over the current app when our accessibility service runs; otherwise via the launcher.
+        // Bring Home forward and open the launcher settings.
         LauncherSettings.init(this)
-        if (!LauncherSettings.overlayPanelEnabled) {
-            openQuickPanel()
-        } else if (!PanelOverlay.show()) {
-            PanelRequests.count.intValue++
-            startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-        }
+        PanelRequests.count.intValue++
+        startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         finish()
     }
 }
@@ -125,18 +120,17 @@ private fun LauncherApp(
 
     LaunchedEffect(resumeTick) { screen = Screen.Home }
     LaunchedEffect(missing) { if (Setup.shouldAutoShow(context, missing)) setupOpen = true }
-    LaunchedEffect(panelRequest) { if (panelRequest > 0 && LauncherSettings.overlayPanelEnabled) panelOpen = true }
+    LaunchedEffect(panelRequest) { if (panelRequest > 0) panelOpen = true }
 
-    Box(Modifier.fillMaxSize().background(Colors.backgroundBrush()).arrowSoundTracker().panelKey { panelOpen = !panelOpen }) {
+    Box(Modifier.fillMaxSize().background(Colors.backgroundBrush()).arrowSoundTracker()) {
         if (Colors.isXmb) XmbBackground()
         Box {
         when (screen) {
             Screen.Home -> HomeScreen(
                 repo, apps, resumeTick,
                 onOpenAll = { screen = Screen.AllApps },
-                // The overlay service's panel when it runs, so the remote key and this button
-                // always toggle the same single panel.
-                onOpenPanel = { if (!PanelOverlay.show()) panelOpen = true },
+                // Launcher settings are always hosted here, without an accessibility overlay.
+                onOpenPanel = { panelOpen = true },
                 onOptions = { optionsFor = it },
                 onSetup = if (missing.isNotEmpty()) { { setupOpen = true } } else null,
             )

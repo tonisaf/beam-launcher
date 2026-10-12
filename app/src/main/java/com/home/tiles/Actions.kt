@@ -20,23 +20,9 @@ fun Context.launchPackage(pkg: String) {
 
 fun Context.isInstalled(pkg: String) = runCatching { packageManager.getPackageInfo(pkg, 0) }.isSuccess
 
-/** XGIMI has no settings activities: its settings UI and quick panel are overlays drawn by services. */
-private fun Context.startXgimiPanel(action: String): Boolean = runCatching {
-    startService(Intent(action).setPackage(XGIMI_SETTINGS)) != null
-}.getOrDefault(false)
+fun Context.openSettings() = start(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 
-fun Context.openSettings() {
-    if (!startXgimiPanel("com.xgimi.settings.SETTINGS")) {
-        start(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-    }
-}
-
-/** Same panel as the gear key on the remote: network, Bluetooth, input source, focus. */
-fun Context.openQuickPanel() {
-    if (!startXgimiPanel("com.xgimi.misckey.MISCKEY")) openSettings()
-}
-
-private const val XGIMI_SETTINGS = "com.android.newsettings"
+fun Context.openQuickPanel() = openSettings()
 
 fun Context.openAppInfo(pkg: String) = start(
     Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$pkg"))

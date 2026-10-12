@@ -19,9 +19,6 @@ object LauncherSettings {
     private val soundsState = mutableStateOf(true)
     private val nowPlayingState = mutableStateOf(true)
     private val usbTileState = mutableStateOf(true)
-    private val hdmiTileState = mutableStateOf(true)
-    private val settingsKeyPanelState = mutableStateOf(false)
-    private val overlayPanelState = mutableStateOf(true)
     private val voiceAssistantState = mutableStateOf(true)
     private val secondRowState = mutableStateOf(SECOND_ROW_AUTO)
     private val homeLayoutState = mutableStateOf(HOME_SWITCH)
@@ -37,9 +34,6 @@ object LauncherSettings {
         soundsState.value = prefs.getBoolean("sounds", true)
         nowPlayingState.value = prefs.getBoolean("nowPlaying", true)
         usbTileState.value = prefs.getBoolean("usbTile", true)
-        hdmiTileState.value = prefs.getBoolean("hdmiTile", true)
-        settingsKeyPanelState.value = prefs.getBoolean("settingsKeyPanel", false)
-        overlayPanelState.value = prefs.getBoolean("overlayPanelEnabled", true)
         voiceAssistantState.value = prefs.getBoolean("voiceAssistantEnabled", true)
         secondRowState.value = prefs.getString("secondRow", SECOND_ROW_AUTO) ?: SECOND_ROW_AUTO
         homeLayoutState.value = prefs.getString("homeLayout", HOME_SWITCH) ?: HOME_SWITCH
@@ -67,20 +61,6 @@ object LauncherSettings {
         get() = usbTileState.value
         set(value) { usbTileState.value = value; prefs.edit().putBoolean("usbTile", value).apply() }
 
-    /** The remote's settings key opens Beam's panel instead of XGIMI's quick settings. */
-    var settingsKeyPanel: Boolean
-        get() = settingsKeyPanelState.value
-        set(value) { settingsKeyPanelState.value = value; prefs.edit().putBoolean("settingsKeyPanel", value).apply() }
-
-    /** Floating quick settings; the launcher's own settings remain accessible from Home. */
-    var overlayPanelEnabled: Boolean
-        get() = overlayPanelState.value
-        set(value) {
-            overlayPanelState.value = value
-            prefs.edit().putBoolean("overlayPanelEnabled", value).apply()
-            PanelOverlay.featuresChanged()
-        }
-
     var voiceAssistantEnabled: Boolean
         get() = voiceAssistantState.value
         set(value) {
@@ -90,10 +70,6 @@ object LauncherSettings {
             if (!value) VoiceRequests.disable()
             PanelOverlay.featuresChanged()
         }
-
-    var hdmiTile: Boolean
-        get() = hdmiTileState.value
-        set(value) { hdmiTileState.value = value; prefs.edit().putBoolean("hdmiTile", value).apply() }
 
     /** Channel key shown under the tiles, or [SECOND_ROW_AUTO] / [SECOND_ROW_OFF]. */
     var secondRow: String
