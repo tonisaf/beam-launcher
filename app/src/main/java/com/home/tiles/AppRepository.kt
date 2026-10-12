@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.RectF
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.Drawable
 import android.util.DisplayMetrics
@@ -161,6 +162,19 @@ class AppRepository(private val context: Context) {
             adaptiveTile(drawable, if (round) ROUND_BLEED else SQUARE_BLEED, backdrop = round)?.let { return it }
         }
         val bitmap = drawable.toBitmap(384, 384)
+        if (round) {
+            // Legacy icons already include their own padding and background. Keep the entire
+            // artwork at tile size; a palette-colored card would shrink it and change its surround.
+            val tile = Bitmap.createBitmap(384, 384, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(tile)
+            canvas.drawColor(android.graphics.Color.WHITE)
+            // Transparent square logos need room for their corners inside the circular mask.
+            // Already circular artwork and icons with an opaque background retain their size.
+            val inset = if (needsRoundInset(bitmap)) 384 * 0.15f else 0f
+            canvas.drawBitmap(bitmap, null, RectF(inset, inset, 384f - inset, 384f - inset), null)
+            val base = Color(Palette.from(tile).generate().getDominantColor(BACKDROP))
+            return TileArt(tile.asImageBitmap(), isBanner = false, top = base, bottom = base, fullBleed = true)
+        }
         val palette = Palette.from(bitmap).generate()
         var base = Color(
             palette.vibrantSwatch?.rgb
@@ -170,6 +184,20 @@ class AppRepository(private val context: Context) {
         // Keep white/pale icons readable.
         if (base.luminance() > 0.6f) base = lerp(base, Color.Black, 0.45f)
         return TileArt(bitmap.asImageBitmap(), isBanner = false, top = base, bottom = lerp(base, Color.Black, 0.3f))
+    }
+
+    private fun needsRoundInset(bitmap: Bitmap): Boolean {
+        val last = bitmap.width - 1
+        val corners = listOf(0 to 0, last to 0, 0 to last, last to last)
+        if (corners.all { (x, y) -> android.graphics.Color.alpha(bitmap.getPixel(x, y)) > 240 }) return false
+        val center = bitmap.width / 2f
+        for (y in 0 until bitmap.height step 8) for (x in 0 until bitmap.width step 8) {
+            val dx = x - center
+            val dy = y - center
+            if (dx * dx + dy * dy > center * center &&
+                android.graphics.Color.alpha(bitmap.getPixel(x, y)) > 16) return true
+        }
+        return false
     }
 
     /**
