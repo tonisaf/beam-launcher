@@ -267,7 +267,7 @@ private fun RoundTile(
                     scaleY = scale
                     alpha = if (dimmed) 0.45f else 1f
                 }
-                .focusGlow(focused, GtvGlow, glowTone(icon?.top ?: Colors.Accent))
+                .focusGlow(focused, FocusGlowReach, glowTone(icon?.top ?: Colors.Accent))
                 .onFocusChanged {
                     focused = it.isFocused
                     if (it.isFocused) Sounds.navigate() else pressed = false
@@ -279,7 +279,7 @@ private fun RoundTile(
             Box(
                 Modifier
                     .fillMaxSize()
-                    .shadow(if (focused) 12.dp else 2.dp, CircleShape)
+                    .shadow(if (focused) 6.dp else 2.dp, CircleShape)
                     .clip(CircleShape),
             ) { if (app != null) AppArt(icon, app.label) else RowItemArt(repo, item) }
             if (focused) Box(Modifier.fillMaxSize().border(3.dp, Colors.Text, CircleShape))
@@ -397,7 +397,8 @@ private fun IconChip(icon: ImageVector, tint: Color? = null, onClick: () -> Unit
 }
 
 
-private const val GLOW_LAYERS = 10
+internal val FocusGlowReach = 16.dp
+private const val GLOW_LAYERS = 40
 
 /**
  * A glow colour that shows against the dark background: the item's own hue, but vivid and bright,
@@ -418,7 +419,7 @@ internal fun glowTone(color: Color): Color {
  */
 internal fun Modifier.focusGlow(focused: Boolean, reach: Dp, tint: Color, circle: Boolean = true): Modifier =
     if (!focused) this else composed {
-        val color = tint.copy(alpha = 0.55f)
+        val color = tint.copy(alpha = 0.30f)
         drawBehind {
             val extra = reach.toPx()
             val center = Offset(size.width / 2, size.height / 2)
@@ -427,6 +428,9 @@ internal fun Modifier.focusGlow(focused: Boolean, reach: Dp, tint: Color, circle
             val brush = Brush.radialGradient(
                 0f to color,
                 (inner / outer).coerceIn(0f, 0.99f) to color,
+                (inner + extra * 0.25f) / outer to color.copy(alpha = color.alpha * 0.84375f),
+                (inner + extra * 0.5f) / outer to color.copy(alpha = color.alpha * 0.5f),
+                (inner + extra * 0.75f) / outer to color.copy(alpha = color.alpha * 0.15625f),
                 1f to Color.Transparent,
                 center = center,
                 radius = outer,
@@ -438,8 +442,9 @@ internal fun Modifier.focusGlow(focused: Boolean, reach: Dp, tint: Color, circle
                 // the glow is a stack of rounded rectangles, each a little larger and fainter.
                 for (i in GLOW_LAYERS downTo 1) {
                     val grow = extra * i / GLOW_LAYERS
+                    val t = (i - 0.5f) / GLOW_LAYERS
                     drawRoundRect(
-                        color.copy(alpha = color.alpha / GLOW_LAYERS * 2.2f),
+                        color.copy(alpha = color.alpha * 6f * t * (1f - t) / GLOW_LAYERS),
                         topLeft = Offset(-grow, -grow),
                         size = Size(size.width + grow * 2, size.height + grow * 2),
                         cornerRadius = CornerRadius(grow + 12.dp.toPx()),

@@ -311,8 +311,8 @@ private fun TvCard(item: TvItem, width: Dp, glow: Boolean, onClick: () -> Unit) 
                 scaleX = scale
                 scaleY = scale
             }
-            .then(if (glow) Modifier.focusGlow(focused, 26.dp, glowTone(glowColor ?: Colors.Accent), circle = false) else Modifier)
-            .shadow(if (focused) 10.dp else 3.dp, shape)
+            .then(if (glow) Modifier.focusGlow(focused, FocusGlowReach, glowTone(glowColor ?: Colors.Accent), circle = false) else Modifier)
+            .shadow(if (focused) 6.dp else 3.dp, shape)
             .clip(shape)
             .background(Color(0xFF3A3A3A))
             .then(if (focused) Modifier.pulseBorder(4.dp, shape) else Modifier)
