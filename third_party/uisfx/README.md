@@ -5,4 +5,4 @@ Beam resource mapping:
 - activate.ogg: packages/uisfx/sounds/minimal/select.ogg
 - popup.ogg: packages/uisfx/sounds/minimal/reaction.ogg
 
-Audio files are copied unchanged; Beam playback volume is 70%.
+Audio files are copied unchanged. Beam master volume is 70%, multiplied by UISFX defaultVolume: hover 12%, select 20%, reaction 17% (effective gains 8.4%, 14%, 11.9%). Hover has a 60 ms cooldown. Repeated cues restart their existing stream instead of overlapping. SoundPool stops immediately; UISFX Web Audio uses a short fade when stopping.
