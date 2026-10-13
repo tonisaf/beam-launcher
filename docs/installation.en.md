@@ -4,6 +4,16 @@
 
 Install a compatible APK and select Beam as Home in Android settings. For ADB installation: `adb install -r app-release.apk`. On first launch choose language, layout and theme; these remain available in Beam settings.
 
+## Home controls
+
+Hold OK on an app (or use the remote menu button) to open its menu. Move changes order directly on Home: arrows move, OK saves, Back cancels. Favorites stay at the front. Configure individual content rows above or below apps in Beam settings.
+
+HDMI tiles require a connected source reported by Android and a stock input player. Show HDMI controls their visibility. USB tiles appear for mounted removable drives when USB tile is enabled; opening one requires the file manager available on the device.
+
+## Updating Beam
+
+Beam Settings → Beam update → Check for updates → Download update → Install. Confirm in Android’s installer. Automatic checks run at most daily when Home opens; updates are not installed silently. Settings are preserved with the same package and signing key.
+
 ## Optional features
 
 Custom image: Beam Settings → Choose image. The system document picker normally opens, including available USB drives and providers. Firmware without a picker uses the Android gallery; Beam requests photo access when needed. The gallery shows the latest 300 MediaStore images (with thumbnails on Android 10+). If an image is missing, save it in Pictures or Download and wait for Android media indexing.

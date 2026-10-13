@@ -1,8 +1,14 @@
+<p align="center"><img src="docs/logo.svg" width="96" height="96" alt="Beam"></p>
+
 # Beam
 
 A launcher for Android TVs, projectors and TV boxes, designed for remote control. Russian and English interface. Built with Kotlin and Jetpack Compose.
 
 [Русская версия](README.md)
+
+**Current release: [Beam 0.4.12](https://github.com/tonisaf/beam-launcher/releases/latest)** · [Download APK](https://github.com/tonisaf/beam-launcher/releases/latest/download/app-release.apk) · [Setup](docs/installation.en.md)
+
+![Beam Home — Google TV layout](docs/screenshots/home-current.png)
 
 ## Features
 
@@ -13,7 +19,7 @@ A launcher for Android TVs, projectors and TV boxes, designed for remote control
 - Launcher preferences: theme, backgrounds including animated XMB, language, layout, and sounds.
 - Custom background image: Settings → Choose image. Thumbnail grid, preview behind real icons and content cards, 0–80% dimming and explicit Apply/Cancel. Beam stores its own copy, which survives restarts and removal of the source drive. Switch back to any preset background at any time.
 - HDMI home tiles for available physical inputs, with a Show HDMI toggle. Requires HDMI inputs and a stock activity capable of opening them; tiles appear only for connected sources and disappear automatically on disconnection.
-- USB storage, Now Playing, network status and battery level where the device provides it.
+- A **USB** tile for connected removable drives (opens the file manager), Now Playing, network status and battery level where the device provides it.
 
 Content rows require the source app to publish Android TV channels or Watch Next entries. Beam displays and arranges that content; installing an app alone does not guarantee rows. LAMPA history and recommendations have been verified on the test device; YouTube currently publishes no rows there.
 
@@ -26,7 +32,7 @@ Content rows require the source app to publish Android TV channels or Watch Next
 - Channels, USB, media status and battery depend on system services, permissions and hardware. TV channels may be absent on ordinary Android firmware.
 - Device validation so far: XGIMI Play 6, Android 11. Compatibility with other models still requires testing.
 
-XGIMI APIs are optional. A read-only adapter obtains the battery level on supported XGIMI firmware; other devices use Android battery data. Beam has no projector picture, focus, keystone, HDMI, power or sleep-timer controls. Device settings open through a standard system intent; XGIMI firmware without that activity uses a fallback to the stock settings and quick-panel services. This opens the manufacturer UI without controlling hardware from Beam.
+XGIMI APIs are optional. A read-only adapter obtains the battery level on supported XGIMI firmware; other devices use Android battery data. The HDMI tile opens the stock input player. Picture, focus, keystone, power and sleep-timer settings remain in the manufacturer UI. The former voice assistant and floating panel are removed. Device settings open through a standard system intent; XGIMI firmware without that activity uses a fallback to the stock settings and quick-panel services. This opens the manufacturer UI without controlling hardware from Beam.
 
 ## Installation
 
@@ -50,6 +56,14 @@ Beam checks the latest stable [GitHub Release](https://github.com/tonisaf/beam-l
 Select Download update, then Install. Beam verifies asset size and GitHub SHA-256 digest, package identity, the installed signing certificate and a strictly higher versionCode. Android asks for installation confirmation. If prompted, permit APK installation from Beam and select Install again. Downloads interrupted by closing the dialog are discarded; reopen it and retry.
 
 Publish stable numeric tags (`v0.4`, `v0.5`, `v1.0.1`) with an asset named `app-release.apk`. Preserve the release signing key and increase both versionName and versionCode. The asset must have the GitHub `sha256:` digest; APKs without it are rejected. The app contains no GitHub token and downloads only public releases. See [release procedure](docs/releases.md).
+
+## Source code
+
+`main` contains the current project page and documentation. Universal launcher code is still on [codex/remove-xgimi](https://github.com/tonisaf/beam-launcher/tree/codex/remove-xgimi); [PR #11](https://github.com/tonisaf/beam-launcher/pull/11) has not been merged. Switch to that branch before building:
+
+```sh
+git switch codex/remove-xgimi
+```
 
 ## Building
 
@@ -88,4 +102,4 @@ The former projector controls are preserved in the [archive branch](https://gith
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+Beam code: [MIT](LICENSE). UISFX Minimal audio: CC0-1.0; source attribution and license are in `third_party/uisfx` on the current source branch.
