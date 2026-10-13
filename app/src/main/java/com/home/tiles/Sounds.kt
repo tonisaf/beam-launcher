@@ -10,7 +10,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 
-/** Switch-style UI sounds. */
+/** UISFX Minimal UI sounds: hover, select and reaction (CC0 audio). */
 object Sounds {
     private var pool: SoundPool? = null
     private var nav = 0
