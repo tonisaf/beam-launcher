@@ -124,6 +124,8 @@ internal fun GoogleTvHome(
     clickFor: (RowItem) -> () -> Unit,
     longClickFor: (RowItem) -> () -> Unit,
     onOptions: (AppEntry) -> Unit,
+    moving: HomeMove? = null,
+    focusApp: String? = null,
 ) {
     var tab by remember { mutableStateOf(GoogleTvTab.Home) }
     val first = remember { FocusRequester() }
@@ -131,7 +133,7 @@ internal fun GoogleTvHome(
     var backTick by remember { mutableIntStateOf(0) }
 
     // Coming home shows the Home tab with focus on the first app, like the Switch layout.
-    LaunchedEffect(resumeTick, backTick, items.firstOrNull()?.key) {
+    LaunchedEffect(resumeTick, backTick, items.firstOrNull()?.key, moving != null) {
         tab = GoogleTvTab.Home
     }
     // Back from the Apps tab returns to Home instead of doing nothing.
@@ -140,7 +142,7 @@ internal fun GoogleTvHome(
     Column(Modifier.fillMaxSize()) {
         GtvTopBar(tab, onTab = { tab = it }, onOpenPanel, onSetup)
         when (tab) {
-            GoogleTvTab.Home -> HomeTab(repo, items, channels, first, resumeTick to backTick, clickFor, longClickFor)
+            GoogleTvTab.Home -> HomeTab(repo, items, channels, first, resumeTick to backTick, clickFor, longClickFor, moving, focusApp)
             GoogleTvTab.Apps -> AppsTab(repo, apps, onOptions)
         }
     }
@@ -156,10 +158,24 @@ private fun HomeTab(
     resetKey: Any,
     clickFor: (RowItem) -> () -> Unit,
     longClickFor: (RowItem) -> () -> Unit,
+    moving: HomeMove?,
+    focusApp: String?,
 ) {
     val listState = rememberLazyListState()
+    val rowState = rememberLazyListState()
+    val selectedFocus = remember { FocusRequester() }
     val above = channels.filter { it.position == ChannelPosition.ABOVE && it.channel.items.isNotEmpty() }
-    LaunchedEffect(resetKey, items.firstOrNull()?.key) {
+    LaunchedEffect(resetKey, items.firstOrNull()?.key, items.map { it.key }, focusApp, moving != null) {
+        val selectedIndex = items.indexOfFirst { it.key == focusApp }
+        if (selectedIndex >= 0) {
+            listState.scrollToItem(above.size)
+            rowState.scrollToItem((selectedIndex - 2).coerceAtLeast(0))
+            repeat(10) {
+                withFrameNanos {}
+                if (runCatching { selectedFocus.requestFocus() }.isSuccess) return@LaunchedEffect
+            }
+            return@LaunchedEffect
+        }
         listState.scrollToItem(0)
         repeat(10) { attempt ->
             withFrameNanos {}
@@ -189,13 +205,16 @@ private fun HomeTab(
                     T(tr(R.string.gtv_your_apps), 20.sp, Modifier.padding(start = GtvPad), color = Colors.TextDim)
                     CompositionLocalProvider(LocalBringIntoViewSpec provides horizontalBringIntoViewSpec) {
                         LazyRow(
+                            state = rowState,
                             contentPadding = PaddingValues(start = GtvPad, end = 60.dp, top = GtvGlow, bottom = GtvGlow / 2),
                             horizontalArrangement = Arrangement.spacedBy(GtvIconGap),
                         ) {
                             itemsIndexed(items, key = { _, item -> item.key }) { i, item ->
                                 RoundTile(
                                     repo, item, GtvIcon,
-                                    requester = if (i == 0) first else null,
+                                    requester = if (item.key == focusApp) selectedFocus else if (i == 0) first else null,
+                                    moving = moving?.pkg == item.key,
+                                    modifier = Modifier.animateItem(),
                                     onClick = clickFor(item),
                                     onLongClick = longClickFor(item),
                                 )
@@ -254,6 +273,8 @@ private fun RoundTile(
     onLongClick: () -> Unit,
     alwaysShowName: Boolean = false,
     dimmed: Boolean = false,
+    moving: Boolean = false,
+    modifier: Modifier = Modifier,
 ) {
     var focused by remember { mutableStateOf(false) }
     var pressed by remember { mutableStateOf(false) }
@@ -268,7 +289,7 @@ private fun RoundTile(
         Sounds.activate()
         onClick()
     }
-    Column(Modifier.width(size), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(modifier.width(size), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             Modifier
                 .size(size)
@@ -293,7 +314,7 @@ private fun RoundTile(
                     .shadow(if (focused) 6.dp else 2.dp, CircleShape)
                     .clip(CircleShape),
             ) { if (app != null) AppArt(icon, app.label) else RowItemArt(repo, item) }
-            if (focused) Box(Modifier.fillMaxSize().border(3.dp, Colors.Text, CircleShape))
+            if (focused || moving) Box(Modifier.fillMaxSize().border(3.dp, if (moving) Colors.Accent else Colors.Text, CircleShape))
         }
         Spacer(Modifier.height(10.dp))
         // The name's room is kept, so rows don't jump as focus moves. It is as wide as an icon plus
@@ -301,7 +322,7 @@ private fun RoundTile(
         Box(Modifier.height(24.dp).fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
             if (focused || alwaysShowName) {
                 T(
-                    item.title, 16.sp,
+                    if (moving) "←  →" else item.title, 16.sp,
                     Modifier.requiredWidth(size + GtvIconGap),
                     color = if (focused) Colors.Text else Colors.TextDim,
                     align = TextAlign.Center,

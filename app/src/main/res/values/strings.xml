@@ -116,4 +116,5 @@
     <string name="update_later">Позже</string>
     <string name="update_install_error">Не удалось открыть установщик. Проверьте разрешение установки APK для Beam.</string>
     <string name="update_permission_hint">Если прошивка не показывает разрешение установки, выдайте его один раз через ADB: adb shell appops set com.home.tiles REQUEST_INSTALL_PACKAGES allow</string>
+    <string name="move_app_cancel">Отмена</string>
 </resources>

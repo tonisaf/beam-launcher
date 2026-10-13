@@ -7,10 +7,13 @@ import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -112,7 +115,9 @@ private fun LauncherApp(
 ) {
     var screen by remember { mutableStateOf(Screen.Home) }
     var optionsFor by remember { mutableStateOf<AppEntry?>(null) }
-    var movingApp by remember { mutableStateOf<AppEntry?>(null) }
+    var moving by remember { mutableStateOf<HomeMove?>(null) }
+    var savedOrder by remember { mutableStateOf<List<String>?>(null) }
+    var focusApp by remember { mutableStateOf<String?>(null) }
     var panelOpen by remember { mutableStateOf(false) }
     var setupOpen by remember { mutableStateOf(false) }
     var welcomeOpen by remember { mutableStateOf(!LauncherSettings.welcomeDone) }
@@ -121,24 +126,61 @@ private fun LauncherApp(
     // Checked again whenever the launcher comes back, so a permission granted meanwhile drops off the list.
     val missing = remember(resumeTick, LauncherSettings.voiceAssistantEnabled) { Setup.missing(context) }
 
-    LaunchedEffect(resumeTick) { screen = Screen.Home }
+    LaunchedEffect(resumeTick) { screen = Screen.Home; moving = null; focusApp = null }
+    LaunchedEffect(apps) {
+        if (moving?.pkg?.let { pkg -> apps.none { it.pkg == pkg && !it.hidden } } == true) moving = null
+        if (apps.filter { !it.hidden }.map { it.pkg } == savedOrder) savedOrder = null
+    }
     LaunchedEffect(missing, welcomeOpen) { if (!welcomeOpen && Setup.shouldAutoShow(context, missing)) setupOpen = true }
     LaunchedEffect(panelRequest) { if (panelRequest > 0) panelOpen = true }
     LaunchedEffect(resumeTick, welcomeOpen) {
         if (!welcomeOpen && Updates.check(context, automatic = true) && Updates.shouldOffer(context)) updateOpen = true
     }
 
-    Box(Modifier.fillMaxSize().background(Colors.backgroundBrush()).arrowSoundTracker()) {
+    fun finishMove(save: Boolean) {
+        val session = moving ?: return
+        if (save) {
+            repo.saveOrder(session.draft, apps)
+            savedOrder = session.draft.map { it.pkg }
+            onChanged()
+        }
+        focusApp = session.pkg
+        moving = null
+    }
+    val homeApps = moving?.draft?.plus(apps.filter { it.hidden }) ?: savedOrder?.let { order ->
+        apps.sortedBy { order.indexOf(it.pkg).takeIf { i -> i >= 0 } ?: Int.MAX_VALUE }
+    } ?: apps
+    Box(Modifier.fillMaxSize().background(Colors.backgroundBrush()).arrowSoundTracker()
+        .onPreviewKeyEvent { event ->
+            val session = moving ?: return@onPreviewKeyEvent false
+            val native = event.nativeKeyEvent
+            when (native.keyCode) {
+                android.view.KeyEvent.KEYCODE_DPAD_LEFT, android.view.KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                    if (native.action == android.view.KeyEvent.ACTION_DOWN)
+                        session.move(if (native.keyCode == android.view.KeyEvent.KEYCODE_DPAD_LEFT) -1 else 1)
+                    true
+                }
+                android.view.KeyEvent.KEYCODE_DPAD_CENTER, android.view.KeyEvent.KEYCODE_ENTER -> {
+                    if (native.action == android.view.KeyEvent.ACTION_UP) { Sounds.activate(); finishMove(true) }
+                    true
+                }
+                android.view.KeyEvent.KEYCODE_DPAD_UP, android.view.KeyEvent.KEYCODE_DPAD_DOWN,
+                android.view.KeyEvent.KEYCODE_MENU -> true
+                else -> false
+            }
+        }) {
         if (Colors.isXmb) XmbBackground()
         Box {
         when (screen) {
             Screen.Home -> HomeScreen(
-                repo, apps, resumeTick,
+                repo, homeApps, resumeTick,
                 onOpenAll = { screen = Screen.AllApps },
                 // Launcher settings are always hosted here, without an accessibility overlay.
                 onOpenPanel = { panelOpen = true },
                 onOptions = { optionsFor = it },
                 onSetup = if (missing.isNotEmpty()) { { setupOpen = true } } else null,
+                moving = moving,
+                focusApp = moving?.pkg ?: focusApp,
             )
             Screen.AllApps -> AllAppsScreen(
                 repo, apps,
@@ -149,15 +191,18 @@ private fun LauncherApp(
         }
         if (panelOpen) SettingsPanel(onDismiss = { panelOpen = false })
         if (welcomeOpen) WelcomeDialog(onDismiss = { welcomeOpen = false })
-        if (updateOpen && !welcomeOpen && !setupOpen && !panelOpen) UpdateDialog(onDismiss = { updateOpen = false })
+        if (updateOpen && !welcomeOpen && !setupOpen && !panelOpen && moving == null) UpdateDialog(onDismiss = { updateOpen = false })
         if (setupOpen && missing.isNotEmpty()) SetupDialog(missing, onDismiss = { setupOpen = false })
         optionsFor?.let { entry ->
             OptionsDialog(entry, repo, onDismiss = { optionsFor = null }, onChanged = onChanged,
-                onMove = { movingApp = entry })
+                onMove = {
+                    screen = Screen.Home
+                    moving = HomeMove(homeApps.filter { !it.hidden }, entry.pkg)
+                })
         }
-        movingApp?.let { entry ->
-            AppOrderDialog(repo, apps, entry.pkg,
-                onDismiss = { movingApp = null }, onSaved = onChanged)
+        moving?.let { session ->
+            MoveHint(session, Modifier.align(Alignment.BottomCenter), onSave = { finishMove(true) }, onCancel = { finishMove(false) })
         }
     }
+    BackHandler(enabled = moving != null) { finishMove(false) }
 }

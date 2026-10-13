@@ -51,6 +51,8 @@ fun HomeScreen(
     onOpenPanel: () -> Unit,
     onOptions: (AppEntry) -> Unit,
     onSetup: (() -> Unit)? = null,
+    moving: HomeMove? = null,
+    focusApp: String? = null,
 ) {
     val context = LocalContext.current
     val channels by rememberTvChannels(resumeTick)
@@ -64,12 +66,12 @@ fun HomeScreen(
         add(RowItem.All(apps.size))
     }
     val keys = items.map { it.key }
-    fun clickFor(item: RowItem): () -> Unit = when (item) {
+    fun clickFor(item: RowItem): () -> Unit = if (moving != null) ({}) else when (item) {
         is RowItem.App -> { { context.launchApp(item.entry) } }
         is RowItem.Usb -> { { context.launchPackage(FILE_MANAGER) } }
         is RowItem.All -> onOpenAll
     }
-    fun longClickFor(item: RowItem): () -> Unit = { if (item is RowItem.App) onOptions(item.entry) }
+    fun longClickFor(item: RowItem): () -> Unit = { if (moving == null && item is RowItem.App) onOptions(item.entry) }
     BackHandler {}
 
     if (LauncherSettings.homeLayout == HOME_GOOGLE_TV) {
@@ -84,6 +86,8 @@ fun HomeScreen(
             clickFor = ::clickFor,
             longClickFor = ::longClickFor,
             onOptions = onOptions,
+            moving = moving,
+            focusApp = focusApp,
         )
         return
     }
@@ -92,7 +96,7 @@ fun HomeScreen(
         val lift = if (showContinue) 0.dp else RowLift
         TopBar(onOpenAll, onOpenPanel, onSetup)
         // The Switch layout: equal tiles in a normally scrolling row.
-        ClassicHome(repo, items, resumeTick, placements, Modifier.weight(1f).padding(bottom = lift), ::clickFor, ::longClickFor)
+        ClassicHome(repo, items, resumeTick, placements, Modifier.weight(1f).padding(bottom = lift), ::clickFor, ::longClickFor, moving, focusApp)
     }
 }
 

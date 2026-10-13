@@ -1,6 +1,7 @@
 package com.home.tiles
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -39,6 +40,7 @@ private val ClassicGap = 14.dp
  * view), the selected one framed with its name above; the channel row, if any, underneath.
  */
 @Composable
+@OptIn(ExperimentalFoundationApi::class)
 internal fun ClassicHome(
     repo: AppRepository,
     items: List<RowItem>,
@@ -47,16 +49,29 @@ internal fun ClassicHome(
     modifier: Modifier,
     clickFor: (RowItem) -> () -> Unit,
     longClickFor: (RowItem) -> () -> Unit,
+    moving: HomeMove? = null,
+    focusApp: String? = null,
 ) {
     val listState = rememberLazyListState()
     val verticalState = rememberLazyListState()
     val above = channels.filter { it.position == ChannelPosition.ABOVE && it.channel.items.isNotEmpty() }
     val below = channels.filter { it.position == ChannelPosition.BELOW && it.channel.items.isNotEmpty() }
     val first = remember { FocusRequester() }
+    val selectedFocus = remember { FocusRequester() }
     var focusedKey by remember { mutableStateOf<String?>(null) }
 
     // Coming home puts focus back on the first tile, like the row layout.
-    LaunchedEffect(resumeTick, items.map { it.key }) {
+    LaunchedEffect(resumeTick, items.map { it.key }, focusApp, moving != null) {
+        val selectedIndex = items.indexOfFirst { it.key == focusApp }
+        if (selectedIndex >= 0) {
+            verticalState.scrollToItem(above.size)
+            listState.scrollToItem((selectedIndex - 1).coerceAtLeast(0))
+            repeat(10) {
+                withFrameNanos {}
+                if (runCatching { selectedFocus.requestFocus() }.isSuccess) return@LaunchedEffect
+            }
+            return@LaunchedEffect
+        }
         listState.scrollToItem(0)
         verticalState.scrollToItem(0)
         repeat(10) { attempt ->
@@ -82,12 +97,12 @@ internal fun ClassicHome(
             ) {
                 itemsIndexed(items, key = { _, item -> item.key }) { i, item ->
                     val focused = focusedKey == item.key
-                    Column {
+                    Column(Modifier.animateItem()) {
                         // Name above the selected tile; may run wider than the tile.
                         Box(Modifier.width(tile).height(40.dp)) {
                             if (focused) {
                                 T(
-                                    item.title,
+                                    if (moving?.pkg == item.key) "←  ${item.title}  →" else item.title,
                                     22.sp,
                                     Modifier.wrapContentWidth(Alignment.Start, unbounded = true),
                                     color = Colors.Accent,
@@ -98,7 +113,7 @@ internal fun ClassicHome(
                             size = tile,
                             highlighted = focused,
                             modifier = Modifier
-                                .then(if (i == 0) Modifier.focusRequester(first) else Modifier)
+                                .then(when { item.key == focusApp -> Modifier.focusRequester(selectedFocus); i == 0 -> Modifier.focusRequester(first); else -> Modifier })
                                 .onFocusChanged {
                                     if (it.isFocused) focusedKey = item.key
                                     else if (focusedKey == item.key) focusedKey = null
