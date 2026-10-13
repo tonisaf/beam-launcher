@@ -28,13 +28,13 @@ private fun Context.canOpenHdmi(input: HdmiInput): Boolean = listOf(true, false)
     activity?.exported == true && activity.enabled
 }
 
-/** Physical ports remain visible without a cable; CEC children never duplicate the port. */
+/** Only connected physical ports are visible; CEC children never duplicate the port. */
 private fun Context.hdmiInputs(): List<HdmiInput> = runCatching {
     val manager = getSystemService(TvInputManager::class.java) ?: return emptyList()
     val ports = manager.tvInputList.filter { it.type == TvInputInfo.TYPE_HDMI && it.parentId == null }
     ports.mapIndexed { index, port ->
         HdmiInput(port.id, if (ports.size == 1) "HDMI" else "HDMI ${index + 1}")
-    }.filter { canOpenHdmi(it) }
+    }.filter { manager.getInputState(it.id) == TvInputManager.INPUT_STATE_CONNECTED && canOpenHdmi(it) }
 }.getOrDefault(emptyList())
 
 @Composable
@@ -43,9 +43,13 @@ internal fun rememberHdmiInputs(resumeTick: Int): State<List<HdmiInput>> {
     val state = remember(context) { mutableStateOf(context.hdmiInputs()) }
     DisposableEffect(context, resumeTick) {
         val manager = context.getSystemService(TvInputManager::class.java)
+        fun refresh() { state.value = context.hdmiInputs() }
         val callback = object : TvInputManager.TvInputCallback() {
             override fun onInputAdded(inputId: String) { state.value = context.hdmiInputs() }
             override fun onInputRemoved(inputId: String) { state.value = context.hdmiInputs() }
+            override fun onInputStateChanged(inputId: String, state: Int) {
+                refresh()
+            }
             override fun onInputUpdated(inputId: String) { state.value = context.hdmiInputs() }
         }
         state.value = context.hdmiInputs()

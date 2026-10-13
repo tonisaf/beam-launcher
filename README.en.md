@@ -12,7 +12,7 @@ A launcher for Android TVs, projectors and TV boxes, designed for remote control
 - Initial setup with language, layout previews and light/dark theme. Choices apply immediately; reopen it from Settings → Initial setup.
 - Launcher preferences: theme, backgrounds including animated XMB, language, layout, and sounds.
 - Custom background image: Settings → Choose image. Thumbnail grid, preview behind real icons and content cards, 0–80% dimming and explicit Apply/Cancel. Beam stores its own copy, which survives restarts and removal of the source drive. Switch back to any preset background at any time.
-- HDMI home tiles for available physical inputs, with a Show HDMI toggle. Requires HDMI inputs and a stock activity capable of opening them; tiles remain visible without a cable.
+- HDMI home tiles for available physical inputs, with a Show HDMI toggle. Requires HDMI inputs and a stock activity capable of opening them; tiles appear only for connected sources and disappear automatically on disconnection.
 - USB storage, Now Playing, network status and battery level where the device provides it.
 
 Content rows require the source app to publish Android TV channels or Watch Next entries. Beam displays and arranges that content; installing an app alone does not guarantee rows. LAMPA history and recommendations have been verified on the test device; YouTube currently publishes no rows there.
