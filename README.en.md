@@ -6,7 +6,7 @@ A launcher for Android TVs, projectors and TV boxes, designed for remote control
 
 [Русская версия](README.md)
 
-**Current release: [Beam 0.4.12](https://github.com/tonisaf/beam-launcher/releases/latest)** · [Download APK](https://github.com/tonisaf/beam-launcher/releases/latest/download/app-release.apk) · [Setup](docs/installation.en.md)
+**Current release: [Beam 0.4.13](https://github.com/tonisaf/beam-launcher/releases/latest)** · [Download APK](https://github.com/tonisaf/beam-launcher/releases/latest/download/app-release.apk) · [Setup](docs/installation.en.md)
 
 ![Beam Home — Google TV layout](docs/screenshots/home-current.png)
 
@@ -19,7 +19,7 @@ A launcher for Android TVs, projectors and TV boxes, designed for remote control
 - Launcher preferences: theme, backgrounds including animated XMB, language, layout, and sounds.
 - Custom background image: Settings → Choose image. Thumbnail grid, preview behind real icons and content cards, 0–80% dimming and explicit Apply/Cancel. Beam stores its own copy, which survives restarts and removal of the source drive. Switch back to any preset background at any time.
 - HDMI home tiles for available physical inputs, with a Show HDMI toggle. Requires HDMI inputs and a stock activity capable of opening them; tiles appear only for connected sources and disappear automatically on disconnection.
-- A **USB** tile for connected removable drives (opens the XGIMI file manager), Now Playing, network status and battery level where the device provides it.
+- A **USB** tile for connected removable drives (system browsing or a selected file manager), Now Playing, network status and battery level where the device provides it.
 
 Content rows require the source app to publish Android TV channels or Watch Next entries. Beam displays and arranges that content; installing an app alone does not guarantee rows. LAMPA history and recommendations have been verified on the test device; YouTube currently publishes no rows there.
 
@@ -38,7 +38,7 @@ XGIMI APIs are optional. A read-only adapter obtains the battery level on suppor
 
 Download an APK from [Releases](https://github.com/tonisaf/beam-launcher/releases) or build the current source, install it and select Beam as Home in Android settings where supported.
 
-**Versions:** v0.4.12 contains the universal launcher and GitHub Releases updater. v0.3 predates these changes. Current source is on `main`; the universal launcher transition was merged in [PR #11](https://github.com/tonisaf/beam-launcher/pull/11).
+**Versions:** v0.4.13 contains the universal launcher and GitHub Releases updater. v0.3 predates these changes. Current source is on `main`; the universal launcher transition was merged in [PR #11](https://github.com/tonisaf/beam-launcher/pull/11).
 
 ```sh
 adb install -r app-release.apk

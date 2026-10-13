@@ -115,4 +115,9 @@
     <string name="wallpaper_dim">Dimming</string>
     <string name="wallpaper_apply">Apply</string>
     <string name="wallpaper_cancel">Cancel</string>
+    <string name="usb_app">USB app</string>
+    <string name="usb_auto">Automatic (system / file manager)</string>
+    <string name="usb_choose">Choose the app to open USB drives</string>
+    <string name="usb_unavailable">No file browser available. Install a file manager and select it in Beam settings.</string>
+    <string name="usb_removed">USB drive is no longer connected</string>
 </resources>

@@ -53,6 +53,7 @@ internal fun AppearancePage() {
 
 @Composable
 private fun HomeScreenSettings() {
+    val context = LocalContext.current
     Section(tr(R.string.home_layout))
     PairRow {
         Chip(tr(R.string.layout_switch), LauncherSettings.homeLayout == HOME_SWITCH, Modifier.weight(1f)) {
@@ -75,6 +76,8 @@ private fun HomeScreenSettings() {
         LauncherSettings.usbTile = !LauncherSettings.usbTile
     }
 
+    Spacer(Modifier.height(10.dp))
+    ListRow(tr(R.string.usb_app)) { context.chooseUsbApp() }
 }
 
 /** XMB colour (by month like the PS3, or fixed) and the animation switch. */

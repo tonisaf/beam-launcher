@@ -115,4 +115,9 @@
     <string name="wallpaper_dim">Затемнение</string>
     <string name="wallpaper_apply">Применить</string>
     <string name="wallpaper_cancel">Отмена</string>
+    <string name="usb_app">Приложение для USB</string>
+    <string name="usb_auto">Автоматически (система / файловый менеджер)</string>
+    <string name="usb_choose">Выберите приложение для открытия USB</string>
+    <string name="usb_unavailable">Нет приложения для открытия USB. Установите файловый менеджер и выберите его в настройках Beam.</string>
+    <string name="usb_removed">USB-накопитель уже отключён</string>
 </resources>

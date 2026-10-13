@@ -71,7 +71,7 @@ fun HomeScreen(
     val keys = items.map { it.key }
     fun clickFor(item: RowItem): () -> Unit = if (moving != null) ({}) else when (item) {
         is RowItem.App -> { { context.launchApp(item.entry) } }
-        is RowItem.Usb -> { { context.launchPackage(FILE_MANAGER) } }
+        is RowItem.Usb -> { { context.openUsb(item.drive) } }
         is RowItem.Hdmi -> { { context.openHdmi(item.input) } }
         is RowItem.All -> onOpenAll
     }
@@ -161,5 +161,3 @@ internal fun ActionButtons(onOpenAll: () -> Unit, onOpenPanel: () -> Unit, modif
         onSetup?.let { RoundButton(Icons.Rounded.Warning, Color(0xFFF5A623), tr(R.string.setup_button), it) }
     }
 }
-
-private const val FILE_MANAGER = "com.xgimi.filemanager"
