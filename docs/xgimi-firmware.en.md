@@ -1,5 +1,7 @@
 # XGIMI Play 6 firmware: how Beam calls the stock functions
 
+> **Historical document.** This describes the former XGIMI-specific Beam integration, preserved in the [archive branch](https://github.com/tonisaf/beam-launcher/tree/codex/archive-xgimi-2026-10-13). Projector controls and the floating panel were removed from the universal launcher. Code references below refer to that archived version. For current features and requirements see [README](../README.en.md).
+
 [Русская версия](xgimi-firmware.md)
 
 A report on what was found in the firmware of the XGIMI Play 6 (Android 11) and how Beam controls

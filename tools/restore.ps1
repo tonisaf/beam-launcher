@@ -1,4 +1,8 @@
 ﻿<#
+  LEGACY XGIMI-ONLY SCRIPT. Not a generic Beam installer.
+  It changes manufacturer services and device settings; see docs/installation.en.md for
+  current universal-launcher setup. Preserved for the archived XGIMI integration.
+
   Restores the XGIMI Play 6 setup: the Beam launcher as the home screen, Chinese services off, keyboard,
   permissions, accessibility services, language, time zone and Bluetooth name.
   Safe to run repeatedly; steps whose app is missing are skipped.

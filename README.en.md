@@ -1,36 +1,54 @@
 # Beam
 
-Android TV launcher with Switch and Google TV layouts, in Russian and English.
+A launcher for Android TVs, projectors and TV boxes, designed for remote control. Russian and English interface. Built with Kotlin and Jetpack Compose.
+
+[Русская версия](README.md)
 
 ## Features
 
-- Apps, favorites, USB storage, preview channels, Continue Watching and Now Playing.
-- Network status and battery level (the read-only XGIMI API on the projector, standard Android API elsewhere).
-- Launcher settings from Home: theme, XMB background, language, layout, channels, sounds and voice.
-- Offline Vosk voice search, speech input in apps, app launch and media commands.
+- Two Home layouts: **Tiles** and **Goldovaya** (round app icons and content rows).
+- Manual app order using the remote, fixed favorites and an all-apps screen. Open an app menu → Move; arrows move it, OK saves, Back cancels.
+- Preview channels and Continue Watching from installed apps: enable or hide each row, choose above or below apps, and reorder rows in each group.
+- Initial setup with language, layout previews and light/dark theme. Choices apply immediately; reopen it from Settings → Initial setup.
+- Launcher preferences: theme, backgrounds including animated XMB, language, layout, sounds and voice.
+- USB storage, Now Playing, network status and battery level where the device provides it.
+- Optional offline Vosk voice search, speech input in apps, app launch and media commands.
 
-The floating quick panel and XGIMI controls have been removed: picture, projector audio,
-focus, keystone, HDMI, sensors, power and sleep timer. Beam no longer intercepts the settings key
-or closes stock settings. A short voice-key press has no panel action; holding it still records speech.
-System settings use the standard Android intent.
+Content rows require the source app to publish Android TV channels or Watch Next entries. Beam displays and arranges that content; installing an app alone does not guarantee rows. LAMPA history and recommendations have been verified on the test device; YouTube currently publishes no rows there.
 
-The previous state is saved in the [archive branch](https://github.com/tonisaf/beam-launcher/tree/codex/archive-xgimi-2026-10-13).
-XGIMI instructions in `docs/xgimi-firmware.en.md`, `tools/restore.ps1`, `skin/` and `russifier/`
-describe the previous integration, not verified behavior of the current launcher.
+## Compatibility
+
+- Android **8.0 or later** (`minSdk 26`), with installation of APKs allowed.
+- The current APK includes native libraries only for **armeabi-v7a**. The OS must support 32-bit ARM apps; ARM64-only and x86 devices are not supported by this build.
+- Optimized for landscape TV screens and a D-pad remote. Phones and tablets have not been verified.
+- Selecting Beam as the default Home app depends on the firmware. Some manufacturers restrict launcher replacement.
+- Channels, USB, media status, voice keys and battery depend on system services, permissions and hardware. TV channels may be absent on ordinary Android firmware.
+- Device validation so far: XGIMI Play 6, Android 11. Compatibility with other models still requires testing.
+
+XGIMI APIs are optional. A read-only adapter obtains the battery level on supported XGIMI firmware; other devices use Android battery data. Beam has no projector picture, focus, keystone, HDMI, power or sleep-timer controls. Android settings open through a standard system intent.
 
 ## Installation
 
-Install the built APK and select Beam as the Home app. The initial setup dialog lists required
-permissions and ADB commands. Install the voice model separately. Native libraries are still built
-for `armeabi-v7a`; other ABIs have not been verified.
+Download an APK from [Releases](https://github.com/tonisaf/beam-launcher/releases) or build the current source, install it and select Beam as Home in Android settings where supported.
+
+**Source versus published release:** the universal launcher changes are currently on [codex/remove-xgimi](https://github.com/tonisaf/beam-launcher/tree/codex/remove-xgimi). Published release **v0.3 (2026-10-05)** predates them. This README describes that branch, not the old release APK; a new release is required to distribute these changes.
+
+```sh
+adb install -r app-release.apk
+adb shell cmd package set-home-activity com.home.tiles/.MainActivity
+```
+
+Check what HOME actually opens: a successful ADB response alone does not prove that the firmware accepted the change. On first launch choose language, layout and theme. A separate **Beam: missing setup** dialog explains optional feature permissions and provides ADB commands. The voice model is installed separately.
+
+[Setup and optional permissions](docs/installation.en.md). `tools/restore.ps1` is a legacy XGIMI-specific script, not a generic installer.
 
 ### Voice model
 
 The Vosk model (~45 MB) is not part of the APK and is not downloaded automatically: speech recognition requires it. Install it once over adb (the microphone permission is
-needed; `restore.ps1` grants it):
+needed; see the setup guide):
 
 ```sh
-# the projector downloads the model itself (https only; add --es voice_sha256 <archive SHA-256> to verify):
+# the device downloads the model itself (https only; add --es voice_sha256 <archive SHA-256> to verify):
 adb shell am broadcast -n com.home.tiles/.AdbCommandReceiver \
     --es voice_url https://alphacephei.com/vosk/models/vosk-model-small-ru-0.22.zip
 # or push the file from the computer (see `VoiceModelProvider` in `Voice.kt`):
@@ -67,10 +85,10 @@ SmartTube) use Beam as well, set it as the system recognizer (optional):
 You need JDK 17 and the Android SDK (the path in `ANDROID_HOME` or `local.properties`).
 
 ```sh
-./gradlew :app:assembleRelease :stub:assembleRelease
+./gradlew :app:assembleRelease
 ```
 
-The APKs appear in `app/build/outputs/apk/release/` and `stub/build/outputs/apk/*/release/`.
+The launcher APK appears in `app/build/outputs/apk/release/`. The optional `:stub:assembleRelease` task builds legacy remote-button helpers for specific firmware; they are not required for a normal installation.
 
 ### Signing
 
@@ -92,6 +110,10 @@ debug key: it installs, but can't update a Beam signed with the real key, and vi
 SHA-256 fingerprint of the release certificate:
 `B0:A3:37:70:07:0C:3C:84:00:29:E1:D4:B3:4F:F3:CF:05:F0:A3:4B:97:41:7D:62:22:38:3E:95:9E:8C:20:F9`.
 
+
+## Legacy XGIMI integration
+
+The former projector controls are preserved in the [archive branch](https://github.com/tonisaf/beam-launcher/tree/codex/archive-xgimi-2026-10-13). [Firmware research](docs/xgimi-firmware.en.md), `tools/restore.ps1`, `skin/` and `russifier/` describe the previous integration and are not current universal-launcher features.
 
 ## License
 
