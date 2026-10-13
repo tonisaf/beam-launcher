@@ -44,9 +44,9 @@ adb shell cmd package resolve-activity --brief -a android.intent.action.MAIN -c 
 
 `tools/restore.ps1` предназначен для прежней конфигурации XGIMI Play 6: он меняет системные настройки и службы. Не используйте его как установщик для произвольного устройства.
 
-## Разрешение обновлений / Update installation permission
+## Разрешение установки обновлений
 
-If the firmware has no standard unknown-source settings screen, allow APK installation from Beam once via ADB. Android still asks to confirm each installation. / Если стандартного экрана разрешения нет, выдайте доступ через ADB один раз; каждую установку по-прежнему подтверждает пользователь.
+Если в прошивке нет стандартного экрана разрешения установки из неизвестных источников, выдайте Beam доступ через ADB один раз. Каждую установку по-прежнему нужно подтверждать в системном установщике.
 
 ```sh
 adb shell appops set com.home.tiles REQUEST_INSTALL_PACKAGES allow

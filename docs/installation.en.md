@@ -44,9 +44,9 @@ Check both the resolved HOME activity and an actual HOME press. Firmware may res
 
 `tools/restore.ps1` targets the former XGIMI Play 6 setup and changes system settings and services. Do not use it as an installer for arbitrary devices.
 
-## Разрешение обновлений / Update installation permission
+## Update installation permission
 
-If the firmware has no standard unknown-source settings screen, allow APK installation from Beam once via ADB. Android still asks to confirm each installation. / Если стандартного экрана разрешения нет, выдайте доступ через ADB один раз; каждую установку по-прежнему подтверждает пользователь.
+If the firmware has no standard unknown-source settings screen, allow APK installation from Beam once via ADB. Android still asks you to confirm each installation.
 
 ```sh
 adb shell appops set com.home.tiles REQUEST_INSTALL_PACKAGES allow
