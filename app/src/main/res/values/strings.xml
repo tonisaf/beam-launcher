@@ -120,4 +120,6 @@
     <string name="usb_choose">Выберите приложение для открытия USB</string>
     <string name="usb_unavailable">Нет приложения для открытия USB. Установите файловый менеджер и выберите его в настройках Beam.</string>
     <string name="usb_removed">USB-накопитель уже отключён</string>
+    <string name="update_notes">Список изменений</string>
+    <string name="update_notes_close">Закрыть</string>
 </resources>

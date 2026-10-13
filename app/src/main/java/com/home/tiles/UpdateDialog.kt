@@ -1,5 +1,7 @@
 package com.home.tiles
 
+import androidx.compose.foundation.focusable
+import androidx.compose.ui.input.key.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -21,6 +23,7 @@ internal fun UpdateDialog(onDismiss: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val first = remember { FocusRequester() }
+    var showNotes by remember { mutableStateOf(false) }
     var auto by remember { mutableStateOf(Updates.autoEnabled(context)) }
     fun dismiss() { Updates.snooze(context); onDismiss() }
     Dialog(onDismissRequest = ::dismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
@@ -59,7 +62,9 @@ internal fun UpdateDialog(onDismiss: () -> Unit) {
                     T(tr(R.string.update_permission_hint), 13.sp, color = Colors.TextDim, maxLines = 4)
                 }
                 Spacer(Modifier.height(12.dp))
-                if (release.notes.isNotBlank()) T(release.notes, 14.sp, color = Colors.TextDim, maxLines = 6)
+                if (release.notes.isNotBlank()) {
+                    Chip(tr(R.string.update_notes), false, Modifier.fillMaxWidth()) { showNotes = true }
+                }
             }
             Spacer(Modifier.height(16.dp))
             Toggle(tr(R.string.update_auto), auto, Modifier.fillMaxWidth()) {
@@ -67,6 +72,35 @@ internal fun UpdateDialog(onDismiss: () -> Unit) {
             }
             Spacer(Modifier.height(12.dp))
             Chip(tr(R.string.update_later), false, Modifier.fillMaxWidth(), onClick = ::dismiss)
+        }
+        LaunchedEffect(Unit) { withFrameNanos {}; first.requestFocus() }
+    }
+    if (showNotes) UpdateNotesDialog(Updates.release?.notes.orEmpty()) { showNotes = false }
+}
+
+@Composable
+private fun UpdateNotesDialog(notes: String, onDismiss: () -> Unit) {
+    val scroll = rememberScrollState()
+    val scope = rememberCoroutineScope()
+    val first = remember { FocusRequester() }
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Column(Modifier.width(760.dp).height(620.dp)
+            .background(Colors.Surface, RoundedCornerShape(32.dp)).padding(32.dp)) {
+            T(tr(R.string.update_notes), 26.sp, color = Colors.Text)
+            Spacer(Modifier.height(16.dp))
+            Box(Modifier.weight(1f).fillMaxWidth().verticalScroll(scroll)
+                .focusRequester(first).onPreviewKeyEvent { event ->
+                    val canScroll = (event.key == Key.DirectionDown && scroll.value < scroll.maxValue) ||
+                        (event.key == Key.DirectionUp && scroll.value > 0)
+                    if (event.type == KeyEventType.KeyDown && canScroll) {
+                        scope.launch { scroll.scrollTo((scroll.value + if (event.key == Key.DirectionDown) 160 else -160).coerceIn(0, scroll.maxValue)) }
+                        true
+                    } else false
+                }.focusable()) {
+                T(notes, 16.sp, color = Colors.Text, maxLines = Int.MAX_VALUE)
+            }
+            Spacer(Modifier.height(16.dp))
+            Chip(tr(R.string.update_notes_close), false, Modifier.fillMaxWidth(), onClick = onDismiss)
         }
         LaunchedEffect(Unit) { withFrameNanos {}; first.requestFocus() }
     }

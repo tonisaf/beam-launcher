@@ -6,7 +6,7 @@ A launcher for Android TVs, projectors and TV boxes, designed for remote control
 
 [Русская версия](README.md)
 
-**Current release: [Beam 1.0.0](https://github.com/tonisaf/beam-launcher/releases/latest)** · [Download APK](https://github.com/tonisaf/beam-launcher/releases/latest/download/app-release.apk) · [Setup](docs/installation.en.md)
+**Current release: [Beam 1.0.1](https://github.com/tonisaf/beam-launcher/releases/latest)** · [Download APK](https://github.com/tonisaf/beam-launcher/releases/latest/download/app-release.apk) · [Setup](docs/installation.en.md)
 
 ![Beam Home — Google TV layout](docs/screenshots/home-current.png)
 
@@ -38,7 +38,7 @@ XGIMI APIs are optional. A read-only adapter obtains the battery level on suppor
 
 Download an APK from [Releases](https://github.com/tonisaf/beam-launcher/releases) or build the current source, install it and select Beam as Home in Android settings where supported.
 
-**Versions:** v1.0.0 contains the universal launcher and GitHub Releases updater. v0.3 predates these changes. Current source is on `main`; the universal launcher transition was merged in [PR #11](https://github.com/tonisaf/beam-launcher/pull/11).
+**Versions:** v1.0.1 contains the universal launcher and GitHub Releases updater. v0.3 predates these changes. Current source is on `main`; the universal launcher transition was merged in [PR #11](https://github.com/tonisaf/beam-launcher/pull/11).
 
 ```sh
 adb install -r app-release.apk

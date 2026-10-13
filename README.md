@@ -6,7 +6,7 @@
 
 [English version](README.en.md)
 
-**Текущий релиз: [Beam 1.0.0](https://github.com/tonisaf/beam-launcher/releases/latest)** · [Скачать APK](https://github.com/tonisaf/beam-launcher/releases/latest/download/app-release.apk) · [Установка](docs/installation.md)
+**Текущий релиз: [Beam 1.0.1](https://github.com/tonisaf/beam-launcher/releases/latest)** · [Скачать APK](https://github.com/tonisaf/beam-launcher/releases/latest/download/app-release.apk) · [Установка](docs/installation.md)
 
 ![Главный экран Beam — раскладка Google TV](docs/screenshots/home-current.png)
 
@@ -38,7 +38,7 @@ API XGIMI не обязательны. Необязательный адапте
 
 Скачайте APK из [Releases](https://github.com/tonisaf/beam-launcher/releases) или соберите актуальный исходный код, установите и выберите Beam домашним приложением в настройках Android, если прошивка это позволяет.
 
-**Версии:** v1.0.0 содержит универсальный лаунчер и обновление через GitHub Releases. v0.3 выпущен до этих изменений. Актуальный исходный код находится в `main`; переход к универсальному лаунчеру завершён в [PR #11](https://github.com/tonisaf/beam-launcher/pull/11).
+**Версии:** v1.0.1 содержит универсальный лаунчер и обновление через GitHub Releases. v0.3 выпущен до этих изменений. Актуальный исходный код находится в `main`; переход к универсальному лаунчеру завершён в [PR #11](https://github.com/tonisaf/beam-launcher/pull/11).
 
 ```sh
 adb install -r app-release.apk
