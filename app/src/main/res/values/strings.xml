@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="voice_assistant_enabled">Голосовой ассистент BEAM</string>
-    <string name="voice_assistant_enabled_hint">Удерживайте голосовую кнопку для команд и поиска. При выключении BEAM не записывает голос.</string>
     <string name="app_name">Beam</string>
-    <string name="panel_overlay_description">Голосовые команды и голосовой ввод в приложениях.</string>
     <string name="app_not_installed">Приложение не установлено</string>
     <string name="cant_open">Не удалось открыть</string>
     <string name="all_apps">Все приложения</string>
@@ -18,7 +15,6 @@
     <string name="quick_settings">Быстрые настройки</string>
     <string name="settings">Настройки</string>
     <string name="appearance">Оформление</string>
-    <string name="mic_not_initialized">Микрофон не инициализирован</string>
     <string name="needs_android_10">нужен Android 10 или новее</string>
     <string name="done">Готово</string>
     <string name="theme">Тема</string>
@@ -31,9 +27,6 @@
     <string name="off">Выкл</string>
     <string name="color_by_month">Цвет по месяцу</string>
     <string name="background_animation">Анимация фона</string>
-    <string name="listening">🎤  Слушаю…</string>
-    <string name="voice_model_missing">Голосовая модель не установлена</string>
-    <string name="didnt_catch">Не расслышал</string>
     <string name="interface_section">Интерфейс</string>
     <string name="nav_sounds">Звуки навигации</string>
     <string name="bg_normal">Обычный</string>
@@ -43,29 +36,22 @@
     <string name="bg_lavender">Лаванда</string>
     <string name="continue_watching">Продолжить просмотр</string>
     <string name="apps_count">Приложений: %1$s</string>
-    <string name="mic_unavailable">Микрофон недоступен: %1$s</string>
-    <string name="mic_recording">Запись… говорите\nуровень: %1$s</string>
     <string name="background_name">Фон · %1$s</string>
-    <string name="didnt_understand">Не понял: «%1$s»</string>
     <string name="language">Язык</string>
     <string name="language_system">Как в системе</string>
     <string name="bg_xmb">XMB</string>
     <string name="setup_title">Beam: не хватает настроек</string>
     <string name="setup_button">Настройка</string>
-    <string name="setup_intro">Без этого часть функций не работает. Выдайте права командами с компьютера, на котором есть adb (адрес проектора: %1$s), или запустите tools\\restore.ps1 из релиза: он сделает всё сам (см. README).</string>
+    <string name="setup_intro">Для дополнительных функций выдайте права командами с компьютера, на котором есть adb (адрес устройства: %1$s).</string>
     <string name="setup_close">Закрыть</string>
-    <string name="setup_secure">Права панели (WRITE_SECURE_SETTINGS)</string>
-    <string name="setup_secure_effect">Голосовой сервис не восстановится после перезагрузки или остановки Beam</string>
     <string name="setup_listener">Доступ к уведомлениям (медиа)</string>
-    <string name="setup_listener_effect">«Сейчас играет» и возврат панели после остановки Beam</string>
+    <string name="setup_listener_effect">«Сейчас играет» и управление медиасессиями</string>
     <string name="setup_usage">Статистика использования</string>
     <string name="setup_usage_effect">Порядок плиток по последнему запуску</string>
     <string name="setup_tv">Каналы Android TV (READ_TV_LISTINGS)</string>
     <string name="setup_tv_effect">Второй ряд на главном экране</string>
     <string name="setup_location">Геолокация (ACCESS_FINE_LOCATION)</string>
     <string name="setup_location_effect">Название подключённой сети Wi-Fi</string>
-    <string name="setup_mic">Микрофон (RECORD_AUDIO)</string>
-    <string name="setup_mic_effect">Голосовые команды с пульта</string>
     <string name="setup_home">Beam не выбран главным экраном</string>
     <string name="setup_home_effect">Кнопка «Домой» откроет другой лаунчер</string>
     <string name="appearance_and_home">Оформление и главный экран</string>

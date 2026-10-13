@@ -13,6 +13,6 @@
 6. Создайте draft Release, загрузите APK и контрольную сумму. Проверьте имя `app-release.apk`, размер и поле `digest` файла в GitHub API. После этого публикуйте стабильный релиз как latest.
 7. На предыдущей версии Beam проверьте полный путь: поиск версии → загрузка → проверка → системный установщик → новый versionCode. Настройки должны сохраниться.
 
-Updater contract: public latest stable GitHub Release in `tonisaf/beam-launcher`, numeric version tag, uploaded `app-release.apk` asset with a SHA-256 digest. Both the tag version and APK versionCode must increase. The installed signing certificate must match. No GitHub token is shipped in the app. The current APK targets Android 8+ and armeabi-v7a.
+Updater contract: public latest stable GitHub Release in `tonisaf/beam-launcher`, numeric version tag, uploaded `app-release.apk` asset with a SHA-256 digest. Both the tag version and APK versionCode must increase. The installed signing certificate must match. No GitHub token is shipped in the app. The current APK targets Android 8+ and includes AndroidX graphics libraries for armeabi-v7a, arm64-v8a, x86 and x86_64.
 
 The GitHub build workflow produces debug-signed artifacts when the private release key is absent. Do not publish those as official updater APKs. The release key stays outside Git and is never uploaded with release assets.

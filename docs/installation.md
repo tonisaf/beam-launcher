@@ -14,8 +14,6 @@
 | Доступ к уведомлениям MediaListener | «Сейчас играет» и управление доступными медиасессиями |
 | GET_USAGE_STATS | Порядок приложений по последнему использованию, если ручной порядок не задан |
 | Геолокация | Получение имени сети Wi-Fi; для современных Android запрашиваются оба разрешения |
-| RECORD_AUDIO | Голосовой ввод; дополнительно нужна модель Vosk |
-| WRITE_SECURE_SETTINGS | Восстановление службы специальных возможностей для голосовой кнопки |
 
 Команды из реализации диагностики Beam (выполняйте на компьютере с ADB, подключённом к устройству):
 
@@ -25,11 +23,9 @@ adb shell cmd notification allow_listener com.home.tiles/com.home.tiles.MediaLis
 adb shell appops set com.home.tiles GET_USAGE_STATS allow
 adb shell pm grant com.home.tiles android.permission.ACCESS_COARSE_LOCATION
 adb shell pm grant com.home.tiles android.permission.ACCESS_FINE_LOCATION
-adb shell pm grant com.home.tiles android.permission.RECORD_AUDIO
-adb shell pm grant com.home.tiles android.permission.WRITE_SECURE_SETTINGS
 ```
 
-Наличие разрешения не создаёт отсутствующие службы: ряды требуют ТВ-провайдера и данных от приложения. Доступ к уведомлениям и использование служб специальных возможностей также могут включаться через системные настройки. Голосовая кнопка зависит от пульта и прошивки; модель и команды её установки описаны в README.
+Наличие разрешения не создаёт отсутствующие службы: ряды требуют ТВ-провайдера и данных от приложения. Доступ к уведомлениям также можно включить через системные настройки.
 
 ## Домашнее приложение
 
@@ -51,3 +47,9 @@ adb shell cmd package resolve-activity --brief -a android.intent.action.MAIN -c 
 ```sh
 adb shell appops set com.home.tiles REQUEST_INSTALL_PACKAGES allow
 ```
+
+## Обновление с прежним голосовым ассистентом
+
+С версии 0.4.4 голосового ассистента в Beam нет. Обновление удаляет сохранённую модель и голосовые настройки, сохраняя оформление, порядок приложений и каналов. Разрешения микрофона и WRITE_SECURE_SETTINGS больше не нужны.
+
+Если раньше Beam вручную назначался системным распознавателем речи, выберите другой доступный распознаватель в настройках Android. Если значение `adb shell settings get secure voice_recognition_service` указывает на `com.home.tiles/.VoskRecognitionService` или `com.home.tiles/com.home.tiles.VoskRecognitionService`, удалите только эту старую привязку: `adb shell settings delete secure voice_recognition_service`. На прошивке без другого распознавателя голосовой ввод приложений будет недоступен.

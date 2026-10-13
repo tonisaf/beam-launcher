@@ -328,14 +328,10 @@ Step "Доступ к медиа («Сейчас играет»)" {
 Step "Каналы приложений (второй ряд)" {
     Check (Adb shell pm grant com.home.tiles android.permission.READ_TV_LISTINGS)
 }
-Step "Системные настройки (восстановление спец. возможностей)" {
-    Check (Adb shell pm grant com.home.tiles android.permission.WRITE_SECURE_SETTINGS)
-}
 Step "Поиск Bluetooth-устройств (местоположение)" {
     Check (Adb shell pm grant com.home.tiles android.permission.ACCESS_FINE_LOCATION)
     Check (Adb shell pm grant com.home.tiles android.permission.ACCESS_COARSE_LOCATION)
 }
-Step "Микрофон пульта (голосовая кнопка)" { Check (Adb shell pm grant com.home.tiles android.permission.RECORD_AUDIO) }
 Step "Время до заставки (screen_off_timeout)" { Check (Adb shell appops set com.home.tiles WRITE_SETTINGS allow) }
 $script:HomeSet = $false
 Step "Домашний экран" {
@@ -359,18 +355,6 @@ if ($otherLaunchers.Count -gt 0) {
     Write-Host "  Из-за них после перезагрузки может открываться окно выбора вместо Beam. Если так, отключите их" -ForegroundColor Yellow
     Write-Host "  (ничего не удаляется): adb shell pm disable-user --user 0 ПАКЕТ  (вернуть: pm enable ПАКЕТ)" -ForegroundColor Yellow
     Write-Host "  Подробнее: README, «Если что-то не работает»." -ForegroundColor Yellow
-}
-
-Write-Host "`n5. Спец. возможности (прошивка сбрасывает их при загрузке, лаунчер потом возвращает сам)" -ForegroundColor Cyan
-Step "Панель Beam (голосовая кнопка и кнопки пульта)" {
-    # Added to the services already enabled (Key Mapper, ...), not replacing them.
-    $component = $beamPanel
-    $current = Adb shell settings get secure enabled_accessibility_services
-    $list = @()
-    if ($current -and $current -ne "null") { $list = @($current -split ':' | Where-Object { $_ }) }
-    if (($list -notcontains $component) -and ($list -notcontains $beamPanelShort)) { $list += $component }
-    Check (Adb shell settings put secure enabled_accessibility_services ($list -join ':'))
-    Check (Adb shell settings put secure accessibility_enabled 1)
 }
 
 Write-Host "`n6. Система" -ForegroundColor Cyan

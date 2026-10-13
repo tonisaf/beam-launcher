@@ -22,13 +22,9 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** Launcher appearance, voice and home screen preferences. */
+/** Launcher appearance and home screen preferences. */
 @Composable
 internal fun AppearancePage() {
-    Toggle(tr(R.string.voice_assistant_enabled), LauncherSettings.voiceAssistantEnabled, Modifier.fillMaxWidth()) {
-        LauncherSettings.voiceAssistantEnabled = !LauncherSettings.voiceAssistantEnabled
-    }
-    T(tr(R.string.voice_assistant_enabled_hint), 14.sp, color = PanelDim, maxLines = 3)
     val dark = LauncherSettings.dark
     Section(tr(R.string.theme))
     PairRow {

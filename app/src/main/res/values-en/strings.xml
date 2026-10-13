@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="voice_assistant_enabled">BEAM voice assistant</string>
-    <string name="voice_assistant_enabled_hint">Hold the voice button for commands and search. When off, BEAM does not record your voice.</string>
     <string name="app_name">Beam</string>
-    <string name="panel_overlay_description">Voice commands and speech input in apps.</string>
     <string name="app_not_installed">App is not installed</string>
     <string name="cant_open">Couldn\'t open</string>
     <string name="all_apps">All apps</string>
@@ -18,7 +15,6 @@
     <string name="quick_settings">Quick settings</string>
     <string name="settings">Settings</string>
     <string name="appearance">Appearance</string>
-    <string name="mic_not_initialized">Microphone not initialised</string>
     <string name="needs_android_10">requires Android 10 or newer</string>
     <string name="done">Done</string>
     <string name="theme">Theme</string>
@@ -31,9 +27,6 @@
     <string name="off">Off</string>
     <string name="color_by_month">Colour by month</string>
     <string name="background_animation">Background animation</string>
-    <string name="listening">🎤  Listening…</string>
-    <string name="voice_model_missing">Voice model is not installed</string>
-    <string name="didnt_catch">Didn\'t catch that</string>
     <string name="interface_section">Interface</string>
     <string name="nav_sounds">Navigation sounds</string>
     <string name="bg_normal">Standard</string>
@@ -43,29 +36,22 @@
     <string name="bg_lavender">Lavender</string>
     <string name="continue_watching">Continue watching</string>
     <string name="apps_count">Apps: %1$s</string>
-    <string name="mic_unavailable">Microphone unavailable: %1$s</string>
-    <string name="mic_recording">Recording… speak now\nlevel: %1$s</string>
     <string name="background_name">Background · %1$s</string>
-    <string name="didnt_understand">Didn\'t understand: “%1$s”</string>
     <string name="language">Language</string>
     <string name="language_system">System default</string>
     <string name="bg_xmb">XMB</string>
     <string name="setup_title">Beam: setup is incomplete</string>
     <string name="setup_button">Setup</string>
-    <string name="setup_intro">Some features don\'t work without this. Grant the permissions with these commands on a computer that has adb (the projector\'s address is %1$s), or run tools\\restore.ps1 from the release: it does it all (see the README).</string>
+    <string name="setup_intro">Grant permissions for optional features using ADB on your computer (device address: %1$s).</string>
     <string name="setup_close">Close</string>
-    <string name="setup_secure">Panel permissions (WRITE_SECURE_SETTINGS)</string>
-    <string name="setup_secure_effect">The voice service will not recover after a reboot or after Beam is stopped</string>
     <string name="setup_listener">Notification access (media)</string>
-    <string name="setup_listener_effect">"Now playing", and the panel coming back after Beam is stopped</string>
+    <string name="setup_listener_effect">Now Playing and media-session controls</string>
     <string name="setup_usage">Usage statistics</string>
     <string name="setup_usage_effect">Tile order by last launch</string>
     <string name="setup_tv">Android TV channels (READ_TV_LISTINGS)</string>
     <string name="setup_tv_effect">The second row on the home screen</string>
     <string name="setup_location">Location (ACCESS_FINE_LOCATION)</string>
     <string name="setup_location_effect">The name of the connected Wi-Fi network</string>
-    <string name="setup_mic">Microphone (RECORD_AUDIO)</string>
-    <string name="setup_mic_effect">Voice commands from the remote</string>
     <string name="setup_home">Beam isn\'t the default home</string>
     <string name="setup_home_effect">The Home button will open another launcher</string>
     <string name="appearance_and_home">Appearance and home screen</string>

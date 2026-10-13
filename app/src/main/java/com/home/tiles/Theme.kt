@@ -19,7 +19,6 @@ object LauncherSettings {
     private val soundsState = mutableStateOf(true)
     private val nowPlayingState = mutableStateOf(true)
     private val usbTileState = mutableStateOf(true)
-    private val voiceAssistantState = mutableStateOf(true)
     private val secondRowState = mutableStateOf(SECOND_ROW_AUTO)
     private val channelRulesState = mutableStateOf<List<ChannelRule>?>(null)
     private val homeLayoutState = mutableStateOf(HOME_SWITCH)
@@ -28,7 +27,7 @@ object LauncherSettings {
     private val welcomeDoneState = mutableStateOf(false)
 
     fun init(context: Context) {
-        // Shared by the launcher activity and the overlay service in the same process.
+        // Shared by launcher activities in the same process.
         if (::prefs.isInitialized) return
         prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
         welcomeDoneState.value = prefs.getBoolean("welcomeDone", prefs.all.isNotEmpty())
@@ -38,7 +37,6 @@ object LauncherSettings {
         soundsState.value = prefs.getBoolean("sounds", true)
         nowPlayingState.value = prefs.getBoolean("nowPlaying", true)
         usbTileState.value = prefs.getBoolean("usbTile", true)
-        voiceAssistantState.value = prefs.getBoolean("voiceAssistantEnabled", true)
         secondRowState.value = prefs.getString("secondRow", SECOND_ROW_AUTO) ?: SECOND_ROW_AUTO
         channelRulesState.value = prefs.getString("channelRules", null)?.let { raw ->
             runCatching {
@@ -77,16 +75,6 @@ object LauncherSettings {
     var usbTile: Boolean
         get() = usbTileState.value
         set(value) { usbTileState.value = value; prefs.edit().putBoolean("usbTile", value).apply() }
-
-    var voiceAssistantEnabled: Boolean
-        get() = voiceAssistantState.value
-        set(value) {
-            if (voiceAssistantState.value == value) return
-            voiceAssistantState.value = value
-            prefs.edit().putBoolean("voiceAssistantEnabled", value).apply()
-            if (!value) VoiceRequests.disable()
-            PanelOverlay.featuresChanged()
-        }
 
     /** Channel key shown under the tiles, or [SECOND_ROW_AUTO] / [SECOND_ROW_OFF]. */
     var secondRow: String

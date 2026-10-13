@@ -68,16 +68,8 @@ import androidx.core.content.ContextCompat
 /**
  * Lets the system give us media sessions (granted over adb:
  * `cmd notification allow_listener com.home.tiles/com.home.tiles.MediaListener`).
- *
- * Also the one thing that restarts us after the firmware force-stops Beam for memory (it does so
- * during video playback). A force stop drops [PanelOverlay] from the enabled accessibility
- * services, but the system rebinds this listener right away, so it restores the panel service.
  */
-class MediaListener : NotificationListenerService() {
-    override fun onListenerConnected() {
-        AccessibilityGuard.ensure(this)
-    }
-}
+class MediaListener : NotificationListenerService()
 
 // ---- Now playing ----
 

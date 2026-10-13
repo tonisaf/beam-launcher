@@ -42,7 +42,6 @@ class MainActivity : ComponentActivity() {
         repo = AppRepository(this)
         LauncherSettings.init(this)
         RemoteButtons.init(this)
-        AccessibilityGuard.ensure(this)
         Sounds.init(this)
         setContent {
             LauncherApp(repo, apps.value, resumeTick.intValue, PanelRequests.count.intValue, onChanged = ::reload)
@@ -62,7 +61,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        AccessibilityGuard.ensure(this)
         reload()
         resumeTick.intValue++
     }
@@ -124,7 +122,7 @@ private fun LauncherApp(
     var updateOpen by remember { mutableStateOf(false) }
     val context = LocalContext.current
     // Checked again whenever the launcher comes back, so a permission granted meanwhile drops off the list.
-    val missing = remember(resumeTick, LauncherSettings.voiceAssistantEnabled) { Setup.missing(context) }
+    val missing = remember(resumeTick) { Setup.missing(context) }
 
     LaunchedEffect(resumeTick) { screen = Screen.Home; moving = null; focusApp = null }
     LaunchedEffect(apps) {

@@ -46,7 +46,7 @@ import java.net.NetworkInterface
 /**
  * What Beam needs from the system that only adb can give (a launcher can't ask for these in a
  * dialog). Without them it still runs, but a feature quietly does nothing, so a new user installing
- * just the APK sees what is missing and the command for each. tools/restore.ps1 does it all.
+ * just the APK sees what is missing and the command for each. The dialog lists the commands for optional features.
  */
 object Setup {
     /** One missing thing: what it is, what doesn't work without it, and the adb command that fixes it. */
@@ -62,7 +62,6 @@ object Setup {
                 add(Item(id, tr(title), tr(effect), "adb shell pm grant $PKG $permission"))
             }
         }
-        grant("secure", Manifest.permission.WRITE_SECURE_SETTINGS, R.string.setup_secure, R.string.setup_secure_effect)
         if (PKG !in NotificationManagerCompat.getEnabledListenerPackages(context)) {
             add(Item("listener", tr(R.string.setup_listener), tr(R.string.setup_listener_effect), "adb shell cmd notification allow_listener $PKG/$PKG.MediaListener"))
         }
@@ -71,8 +70,6 @@ object Setup {
         }
         grant("tv", "android.permission.READ_TV_LISTINGS", R.string.setup_tv, R.string.setup_tv_effect)
         grant("location", Manifest.permission.ACCESS_FINE_LOCATION, R.string.setup_location, R.string.setup_location_effect)
-        if (LauncherSettings.voiceAssistantEnabled)
-            grant("mic", Manifest.permission.RECORD_AUDIO, R.string.setup_mic, R.string.setup_mic_effect)
 
         // Null when the system doesn't show us the default home (package visibility): say nothing then.
         val home = context.packageManager
