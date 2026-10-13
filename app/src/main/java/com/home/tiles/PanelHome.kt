@@ -88,7 +88,7 @@ private fun HomeScreenSettings() {
     }
     channels.forEach { channel ->
         Spacer(Modifier.height(10.dp))
-        Chip(channel.name, LauncherSettings.secondRow == channel.key, Modifier.fillMaxWidth()) {
+        Chip(channel.name, LauncherSettings.secondRow == channel.key || LauncherSettings.secondRow == channel.legacyKey, Modifier.fillMaxWidth()) {
             LauncherSettings.secondRow = channel.key
         }
     }

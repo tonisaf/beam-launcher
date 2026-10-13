@@ -130,7 +130,7 @@ internal fun GoogleTvHome(
     var backTick by remember { mutableIntStateOf(0) }
 
     // Coming home shows the Home tab with focus on the first app, like the Switch layout.
-    LaunchedEffect(resumeTick, backTick) {
+    LaunchedEffect(resumeTick, backTick, items.firstOrNull()?.key) {
         tab = GoogleTvTab.Home
         repeat(10) {
             withFrameNanos {}

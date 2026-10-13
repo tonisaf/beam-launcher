@@ -57,8 +57,11 @@ import androidx.palette.graphics.Palette
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.runInterruptible
+import kotlinx.coroutines.CancellationException
+import java.io.File
+import java.net.HttpURLConnection
 import java.net.URL
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Other apps' home-screen content from the Android TV provider: their preview channels
@@ -74,7 +77,7 @@ class TvItem(
     val intentUri: String?,
 )
 
-class TvChannel(val key: String, val name: String, val items: List<TvItem>)
+class TvChannel(val key: String, val name: String, val items: List<TvItem>, val legacyKey: String = key)
 
 const val WATCH_NEXT_KEY = "watchnext"
 const val SECOND_ROW_OFF = "off"
@@ -107,10 +110,10 @@ fun rememberTvChannels(refreshKey: Any): State<List<TvChannel>> {
 /** The channel chosen for the second row; "auto" prefers SmartTube subscriptions. */
 fun pickSecondRow(channels: List<TvChannel>, setting: String): TvChannel? = when (setting) {
     SECOND_ROW_OFF -> null
-    SECOND_ROW_AUTO -> channels.firstOrNull { it.key == "org.smarttube.stable|Подписки" && it.items.isNotEmpty() }
+    SECOND_ROW_AUTO -> channels.firstOrNull { it.legacyKey == "org.smarttube.stable|Подписки" && it.items.isNotEmpty() }
         ?: channels.firstOrNull { it.key == WATCH_NEXT_KEY }
         ?: channels.firstOrNull { it.items.isNotEmpty() }
-    else -> channels.firstOrNull { it.key == setting }
+    else -> channels.firstOrNull { it.key == setting || it.legacyKey == setting }
 }?.takeIf { it.items.isNotEmpty() }
 
 fun queryTvChannels(context: Context): List<TvChannel> {
@@ -196,7 +199,7 @@ fun queryTvChannels(context: Context): List<TvChannel> {
         val app = runCatching { context.packageManager.getApplicationLabel(context.packageManager.getApplicationInfo(pkg, 0)) }
             .getOrNull()?.toString()
         val label = if (app == null || app == name) name else "$name · $app"
-        result += TvChannel("$pkg|$name", label, items.clean())
+        result += TvChannel("preview:$id", label, items.clean(), legacyKey = "$pkg|$name")
     }
     return result
 }
@@ -238,23 +241,57 @@ private const val REFRESH_INTERVAL_MS = 30L * 60 * 1000
 
 // ---- Posters ----
 
-private val posterCache = ConcurrentHashMap<Uri, ImageBitmap>()
+private val posterCache = BoundedCache<Uri, ImageBitmap>(16 * 1024 * 1024) { it.asAndroidBitmap().allocationByteCount }
 
 private suspend fun loadPoster(context: Context, uri: Uri): ImageBitmap? = withContext(Dispatchers.IO) {
     posterCache[uri]?.let { return@withContext it }
-    runCatching {
-        fun open() = when (uri.scheme) {
-            "http", "https" -> URL(uri.toString()).openStream()
-            else -> context.contentResolver.openInputStream(uri)
-        }
-        // Posters can be full-size artwork; sample down to card size to spare this device's small RAM.
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        open()?.use { BitmapFactory.decodeStream(it, null, bounds) }
-        var sample = 1
-        while (bounds.outWidth / (sample * 2) >= 480) sample *= 2
-        open()?.use { BitmapFactory.decodeStream(it, null, BitmapFactory.Options().apply { inSampleSize = sample }) }
-            ?.asImageBitmap()
-    }.getOrNull()?.also { posterCache[uri] = it }
+    try {
+        runInterruptible {
+            // Download once, then inspect and decode the same bytes from disk.
+            val file = File.createTempFile("poster-", ".img", context.cacheDir)
+            var connection: HttpURLConnection? = null
+            try {
+                val input = when (uri.scheme) {
+                    "http", "https" -> (URL(uri.toString()).openConnection() as HttpURLConnection).also {
+                        connection = it
+                        it.connectTimeout = 8_000
+                        it.readTimeout = 8_000
+                    }.inputStream
+                    else -> context.contentResolver.openInputStream(uri)
+                } ?: return@runInterruptible null
+                input.use { stream ->
+                    file.outputStream().use { output ->
+                        val buffer = ByteArray(16 * 1024)
+                        var total = 0
+                        val deadline = System.nanoTime() + 30_000_000_000L
+                        while (true) {
+                            if (Thread.currentThread().isInterrupted) throw InterruptedException()
+                            check(System.nanoTime() < deadline) { "Poster download timed out" }
+                            val count = stream.read(buffer)
+                            if (count < 0) break
+                            total += count
+                            check(total <= 20 * 1024 * 1024) { "Poster is too large" }
+                            output.write(buffer, 0, count)
+                        }
+                    }
+                }
+                val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                BitmapFactory.decodeFile(file.absolutePath, bounds)
+                if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return@runInterruptible null
+                var sample = 1
+                while (maxOf(bounds.outWidth, bounds.outHeight) / sample > 960) sample *= 2
+                BitmapFactory.decodeFile(file.absolutePath, BitmapFactory.Options().apply { inSampleSize = sample })?.asImageBitmap()
+            } finally {
+                connection?.disconnect()
+                file.delete()
+            }
+        }?.also { posterCache[uri] = it }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Log.w(TAG, "Poster load failed: $uri", e)
+        null
+    }
 }
 
 // ---- UI ----
@@ -278,7 +315,7 @@ fun ChannelRow(channel: TvChannel, startPad: Dp, cardWidth: Dp = 208.dp, glow: B
 }
 
 /** Poster URI to the colour its card glows. */
-private val glowCache = ConcurrentHashMap<Uri, Color>()
+private val glowCache = BoundedCache<Uri, Color>(128) { 1 }
 
 /** The poster's most vivid colour, or its dominant one; null if it can't be read. */
 private fun posterColor(image: ImageBitmap): Color? = runCatching {

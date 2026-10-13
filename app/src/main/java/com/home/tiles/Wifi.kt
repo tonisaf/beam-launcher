@@ -75,7 +75,10 @@ internal object WifiReader {
         // Without location access the system answers "<unknown ssid>": no name rather than that.
         val connected = info != null && info.networkId != -1
         val name = info?.ssid?.trim('"')?.takeIf { connected && it != WifiManager.UNKNOWN_SSID }
-        val scan = wifi.scanResults.map { WifiNetwork(it.SSID.orEmpty(), it.level, it.frequency, securityOf(it.capabilities)) }
+        val scan = if (context.checkSelfPermission(android.Manifest.permission.ACCESS_FINE_LOCATION) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            wifi.scanResults.map { WifiNetwork(it.SSID.orEmpty(), it.level, it.frequency, securityOf(it.capabilities)) }
+        } else emptyList()
         WifiStatus(
             enabled = true,
             ssid = name,
