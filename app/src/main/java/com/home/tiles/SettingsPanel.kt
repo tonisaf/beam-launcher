@@ -30,8 +30,10 @@ import androidx.compose.ui.window.DialogProperties
 fun SettingsPanel(onDismiss: () -> Unit) {
     val first = remember { FocusRequester() }
     var closeFocused by remember { mutableStateOf(false) }
+    var channelsOpen by remember { mutableStateOf(false) }
+    fun back() { if (channelsOpen) channelsOpen = false else onDismiss() }
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        BackHandler(onBack = onDismiss)
+        BackHandler(onBack = ::back)
         Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.CenterEnd) {
             Column(Modifier.width(520.dp).fillMaxHeight().clip(RoundedCornerShape(32.dp))
                 .background(Colors.Surface).padding(28.dp).arrowSoundTracker()) {
@@ -39,22 +41,29 @@ fun SettingsPanel(onDismiss: () -> Unit) {
                     Box(Modifier.size(48.dp).focusRequester(first)
                         .background(if (closeFocused) Colors.Text else CardBg, CircleShape)
                         .onFocusChanged { closeFocused = it.isFocused; if (it.isFocused) Sounds.navigate() }
-                        .clickable(remember { MutableInteractionSource() }, null) { Sounds.activate(); onDismiss() },
+                        .clickable(remember { MutableInteractionSource() }, null) { Sounds.activate(); back() },
                         contentAlignment = Alignment.Center) {
                         Image(Icons.Rounded.ArrowBack, tr(R.string.setup_close), Modifier.size(24.dp),
                             colorFilter = ColorFilter.tint(if (closeFocused) Colors.Background else Colors.Text))
                     }
                     Spacer(Modifier.width(16.dp))
-                    T(tr(R.string.appearance_and_home), 24.sp, Modifier.weight(1f), color = Colors.Text)
+                    T(tr(if (channelsOpen) R.string.channel_rows else R.string.appearance_and_home), 24.sp, Modifier.weight(1f), color = Colors.Text)
                 }
                 Spacer(Modifier.height(20.dp))
-                Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-                    AppearancePage()
-                    Section(tr(R.string.interface_section))
-                    Toggle(tr(R.string.nav_sounds), LauncherSettings.sounds, Modifier.fillMaxWidth()) {
-                        LauncherSettings.sounds = !LauncherSettings.sounds
+                key(channelsOpen) {
+                    Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                        if (channelsOpen) {
+                            ChannelSettings()
+                        } else {
+                            ListRow(tr(R.string.channel_rows)) { channelsOpen = true }
+                            AppearancePage()
+                            Section(tr(R.string.interface_section))
+                            Toggle(tr(R.string.nav_sounds), LauncherSettings.sounds, Modifier.fillMaxWidth()) {
+                                LauncherSettings.sounds = !LauncherSettings.sounds
+                            }
+                            Spacer(Modifier.height(16.dp))
+                        }
                     }
-                    Spacer(Modifier.height(16.dp))
                 }
             }
         }

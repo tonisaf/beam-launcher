@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
@@ -42,28 +43,38 @@ internal fun ClassicHome(
     repo: AppRepository,
     items: List<RowItem>,
     resumeTick: Int,
-    secondRow: TvChannel?,
+    channels: List<ChannelPlacement>,
     modifier: Modifier,
     clickFor: (RowItem) -> () -> Unit,
     longClickFor: (RowItem) -> () -> Unit,
 ) {
     val listState = rememberLazyListState()
+    val verticalState = rememberLazyListState()
+    val above = channels.filter { it.position == ChannelPosition.ABOVE && it.channel.items.isNotEmpty() }
+    val below = channels.filter { it.position == ChannelPosition.BELOW && it.channel.items.isNotEmpty() }
     val first = remember { FocusRequester() }
     var focusedKey by remember { mutableStateOf<String?>(null) }
 
     // Coming home puts focus back on the first tile, like the row layout.
     LaunchedEffect(resumeTick, items.map { it.key }) {
         listState.scrollToItem(0)
-        repeat(10) {
+        verticalState.scrollToItem(0)
+        repeat(10) { attempt ->
             withFrameNanos {}
             if (runCatching { first.requestFocus() }.isSuccess) return@LaunchedEffect
+            if (attempt == 1) verticalState.scrollToItem(above.size)
         }
     }
 
     BoxWithConstraints(modifier.fillMaxWidth()) {
         // About four and a half tiles across, 256dp at most like the Switch on a 1280dp screen.
         val tile = ((maxWidth - ClassicPad) / 4.5f).coerceAtMost(256.dp)
-        Column(Modifier.fillMaxSize(), verticalArrangement = Arrangement.Center) {
+        LazyColumn(Modifier.fillMaxSize(), state = verticalState,
+            verticalArrangement = if (above.isEmpty() && below.isEmpty()) Arrangement.Center else Arrangement.spacedBy(14.dp)) {
+            above.forEach { placement ->
+                item(key = placement.channel.key) { ChannelRow(placement.channel, ClassicPad) }
+            }
+            item(key = "apps") {
             LazyRow(
                 state = listState,
                 contentPadding = PaddingValues(start = ClassicPad, end = ClassicPad, top = 8.dp, bottom = 14.dp),
@@ -98,9 +109,9 @@ internal fun ClassicHome(
                     }
                 }
             }
-            if (secondRow != null) {
-                Spacer(Modifier.height(10.dp))
-                ChannelRow(secondRow, ClassicPad)
+            }
+            below.forEach { placement ->
+                item(key = placement.channel.key) { ChannelRow(placement.channel, ClassicPad) }
             }
         }
     }

@@ -80,6 +80,7 @@ class TvItem(
 class TvChannel(val key: String, val name: String, val items: List<TvItem>, val legacyKey: String = key)
 
 const val WATCH_NEXT_KEY = "watchnext"
+internal fun TvChannel.isWatchNext() = key == WATCH_NEXT_KEY || key.startsWith("watchnext:")
 const val SECOND_ROW_OFF = "off"
 const val SECOND_ROW_AUTO = "auto"
 
@@ -111,7 +112,7 @@ fun rememberTvChannels(refreshKey: Any): State<List<TvChannel>> {
 fun pickSecondRow(channels: List<TvChannel>, setting: String): TvChannel? = when (setting) {
     SECOND_ROW_OFF -> null
     SECOND_ROW_AUTO -> channels.firstOrNull { it.legacyKey == "org.smarttube.stable|Подписки" && it.items.isNotEmpty() }
-        ?: channels.firstOrNull { it.key == WATCH_NEXT_KEY }
+        ?: channels.firstOrNull { it.isWatchNext() && it.items.isNotEmpty() }
         ?: channels.firstOrNull { it.items.isNotEmpty() }
     else -> channels.firstOrNull { it.key == setting || it.legacyKey == setting }
 }?.takeIf { it.items.isNotEmpty() }
@@ -147,8 +148,13 @@ fun queryTvChannels(context: Context): List<TvChannel> {
             }
         }
     }
-    val watchNextItems = watchNext.sortedByDescending { it.first }.map { it.second }.clean()
-    if (watchNextItems.isNotEmpty()) result += TvChannel(WATCH_NEXT_KEY, tr(R.string.continue_watching), watchNextItems)
+    for ((pkg, entries) in watchNext.sortedByDescending { it.first }.map { it.second }.groupBy { it.pkg }) {
+        val items = entries.clean()
+        if (items.isEmpty()) continue
+        val app = runCatching { context.packageManager.getApplicationLabel(context.packageManager.getApplicationInfo(pkg, 0)).toString() }
+            .getOrDefault(pkg)
+        result += TvChannel("watchnext:$pkg", "${tr(R.string.continue_watching)} · $app", items)
+    }
 
     val channels = mutableListOf<Triple<Long, String, String>>() // id, package, name
     // TvProvider rejects selection/sort arguments from non-system callers, so filter here.

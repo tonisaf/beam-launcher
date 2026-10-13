@@ -21,6 +21,7 @@ object LauncherSettings {
     private val usbTileState = mutableStateOf(true)
     private val voiceAssistantState = mutableStateOf(true)
     private val secondRowState = mutableStateOf(SECOND_ROW_AUTO)
+    private val channelRulesState = mutableStateOf<List<ChannelRule>?>(null)
     private val homeLayoutState = mutableStateOf(HOME_SWITCH)
     private val xmbColorState = mutableStateOf(-1)
     private val bgAnimationState = mutableStateOf(true)
@@ -36,6 +37,15 @@ object LauncherSettings {
         usbTileState.value = prefs.getBoolean("usbTile", true)
         voiceAssistantState.value = prefs.getBoolean("voiceAssistantEnabled", true)
         secondRowState.value = prefs.getString("secondRow", SECOND_ROW_AUTO) ?: SECOND_ROW_AUTO
+        channelRulesState.value = prefs.getString("channelRules", null)?.let { raw ->
+            runCatching {
+                val array = org.json.JSONArray(raw)
+                List(array.length()) { index ->
+                    val row = array.getJSONObject(index)
+                    ChannelRule(row.getString("key"), row.getString("legacy"), ChannelPosition.valueOf(row.getString("position")))
+                }
+            }.getOrNull()
+        }
         homeLayoutState.value = prefs.getString("homeLayout", HOME_SWITCH) ?: HOME_SWITCH
         xmbColorState.value = prefs.getInt("xmbColor", -1)
         bgAnimationState.value = prefs.getBoolean("bgAnimation", true)
@@ -75,6 +85,16 @@ object LauncherSettings {
     var secondRow: String
         get() = secondRowState.value
         set(value) { secondRowState.value = value; prefs.edit().putString("secondRow", value).apply() }
+
+    var channelRules: List<ChannelRule>?
+        get() = channelRulesState.value
+        set(value) {
+            channelRulesState.value = value
+            val array = value?.let { rows -> org.json.JSONArray().apply {
+                rows.forEach { put(org.json.JSONObject().put("key", it.key).put("legacy", it.legacyKey).put("position", it.position.name)) }
+            } }
+            prefs.edit().putString("channelRules", array?.toString()).apply()
+        }
 
     /** The home screen's layout: [HOME_SWITCH] (tiles in a row) or [HOME_GOOGLE_TV] (tabs, channel rows, round icons). */
     var homeLayout: String

@@ -16,7 +16,7 @@ class GoogleTvChannelsTest {
 
     @Test
     fun autoShowsTheFirstFewWithContent() {
-        assertEquals(listOf("watchnext", "a", "b"), googleTvChannels(channels, SECOND_ROW_AUTO).map { it.key })
+        assertEquals(listOf("watchnext", "a", "b", "c"), googleTvChannels(channels, SECOND_ROW_AUTO).map { it.key })
     }
 
     @Test
@@ -38,5 +38,15 @@ class GoogleTvChannelsTest {
         assertEquals(listOf("preview:1", "preview:2"), googleTvChannels(sameNamed, SECOND_ROW_AUTO).map { it.key })
         assertEquals(first, pickSecondRow(sameNamed, "pkg|History"))
         assertEquals(second, pickSecondRow(sameNamed, "preview:2"))
+    }
+
+    @Test
+    fun watchNextSelectionKeepsHistoriesFromEveryApp() {
+        val histories = listOf(
+            TvChannel("watchnext:one", "One", listOf(item(1)), WATCH_NEXT_KEY),
+            TvChannel("watchnext:two", "Two", listOf(item(2)), WATCH_NEXT_KEY),
+            channel("preview:3", 1),
+        )
+        assertEquals(listOf("watchnext:one", "watchnext:two"), googleTvChannels(histories, WATCH_NEXT_KEY).map { it.key })
     }
 }

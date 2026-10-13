@@ -76,4 +76,14 @@
     <string name="gtv_tab_home">Home</string>
     <string name="gtv_tab_apps">Apps</string>
     <string name="gtv_your_apps">Your apps</string>
+    <string name="channel_rows">Channel rows</string>
+    <string name="channel_rows_hint">Enable rows, choose their position and change their order. New channels appear below apps. Empty rows stay off the home screen.</string>
+    <string name="channel_rows_empty">Apps have not provided channels yet</string>
+    <string name="channel_above">Above apps</string>
+    <string name="channel_below">Below apps</string>
+    <string name="channel_hidden">Hidden</string>
+    <string name="channel_move_up">↑ Move up</string>
+    <string name="channel_move_down">↓ Move down</string>
+    <string name="channel_card_count">Cards: %1$d</string>
+    <string name="channel_reset">Restore default order</string>
 </resources>

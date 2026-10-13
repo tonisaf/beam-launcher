@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -88,7 +89,6 @@ private val GtvCard = 262.dp
 /** How far a focused item's glow reaches past its edge; the rows leave this much room so it isn't cut off. */
 private val GtvGlow = 26.dp
 
-private const val GTV_MAX_CHANNELS = 3
 
 // TV's default pivot scrolls even an already visible icon back to its focus line.
 // Its animated scale changes that target and rocks the whole column while moving
@@ -102,7 +102,8 @@ internal val HomeVerticalBringIntoViewSpec = object : BringIntoViewSpec {}
  */
 internal fun googleTvChannels(channels: List<TvChannel>, setting: String): List<TvChannel> = when (setting) {
     SECOND_ROW_OFF -> emptyList()
-    SECOND_ROW_AUTO -> channels.filter { it.items.isNotEmpty() }.take(GTV_MAX_CHANNELS)
+    SECOND_ROW_AUTO -> channels.filter { it.items.isNotEmpty() }
+    WATCH_NEXT_KEY -> channels.filter { it.isWatchNext() && it.items.isNotEmpty() }
     else -> listOfNotNull(pickSecondRow(channels, setting))
 }
 
@@ -116,7 +117,7 @@ internal fun GoogleTvHome(
     repo: AppRepository,
     items: List<RowItem>,
     apps: List<AppEntry>,
-    channels: List<TvChannel>,
+    channels: List<ChannelPlacement>,
     resumeTick: Int,
     onOpenPanel: () -> Unit,
     onSetup: (() -> Unit)?,
@@ -132,10 +133,6 @@ internal fun GoogleTvHome(
     // Coming home shows the Home tab with focus on the first app, like the Switch layout.
     LaunchedEffect(resumeTick, backTick, items.firstOrNull()?.key) {
         tab = GoogleTvTab.Home
-        repeat(10) {
-            withFrameNanos {}
-            if (runCatching { first.requestFocus() }.isSuccess) return@LaunchedEffect
-        }
     }
     // Back from the Apps tab returns to Home instead of doing nothing.
     BackHandler(enabled = tab == GoogleTvTab.Apps) { backTick++ }
@@ -143,7 +140,7 @@ internal fun GoogleTvHome(
     Column(Modifier.fillMaxSize()) {
         GtvTopBar(tab, onTab = { tab = it }, onOpenPanel, onSetup)
         when (tab) {
-            GoogleTvTab.Home -> HomeTab(repo, items, channels, first, clickFor, longClickFor)
+            GoogleTvTab.Home -> HomeTab(repo, items, channels, first, resumeTick to backTick, clickFor, longClickFor)
             GoogleTvTab.Apps -> AppsTab(repo, apps, onOptions)
         }
     }
@@ -154,20 +151,33 @@ internal fun GoogleTvHome(
 private fun HomeTab(
     repo: AppRepository,
     items: List<RowItem>,
-    channels: List<TvChannel>,
+    channels: List<ChannelPlacement>,
     first: FocusRequester,
+    resetKey: Any,
     clickFor: (RowItem) -> () -> Unit,
     longClickFor: (RowItem) -> () -> Unit,
 ) {
+    val listState = rememberLazyListState()
+    val above = channels.filter { it.position == ChannelPosition.ABOVE && it.channel.items.isNotEmpty() }
+    LaunchedEffect(resetKey, items.firstOrNull()?.key) {
+        listState.scrollToItem(0)
+        repeat(10) { attempt ->
+            withFrameNanos {}
+            if (runCatching { first.requestFocus() }.isSuccess) return@LaunchedEffect
+            if (attempt == 1) listState.scrollToItem(above.size)
+        }
+    }
     val horizontalBringIntoViewSpec = LocalBringIntoViewSpec.current
     CompositionLocalProvider(LocalBringIntoViewSpec provides HomeVerticalBringIntoViewSpec) {
         LazyColumn(
             Modifier.fillMaxSize(),
+            state = listState,
             contentPadding = PaddingValues(top = 10.dp, bottom = 40.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             // The first channel on top like Google TV's hero row, then the apps, then the rest.
-            channels.take(1).forEach { channel ->
+            above.forEach { placement ->
+                val channel = placement.channel
                 item(key = "channel:${channel.key}") {
                     CompositionLocalProvider(LocalBringIntoViewSpec provides horizontalBringIntoViewSpec) {
                         ChannelRow(channel, GtvPad, GtvCard, glow = true)
@@ -194,7 +204,8 @@ private fun HomeTab(
                     }
                 }
             }
-            channels.drop(1).forEach { channel ->
+            channels.filter { it.position == ChannelPosition.BELOW && it.channel.items.isNotEmpty() }.forEach { placement ->
+                val channel = placement.channel
                 item(key = "channel:${channel.key}") {
                     CompositionLocalProvider(LocalBringIntoViewSpec provides horizontalBringIntoViewSpec) {
                         ChannelRow(channel, GtvPad, GtvCard, glow = true)

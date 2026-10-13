@@ -76,4 +76,14 @@
     <string name="gtv_tab_home">Главная</string>
     <string name="gtv_tab_apps">Приложения</string>
     <string name="gtv_your_apps">Ваши приложения</string>
+    <string name="channel_rows">Ряды каналов</string>
+    <string name="channel_rows_hint">Включайте ряды, выбирайте положение и меняйте порядок. Новые каналы появляются под приложениями. Пустые ряды на главном экране не показываются.</string>
+    <string name="channel_rows_empty">Приложения пока не предоставили каналы</string>
+    <string name="channel_above">Над приложениями</string>
+    <string name="channel_below">Под приложениями</string>
+    <string name="channel_hidden">Скрытые</string>
+    <string name="channel_move_up">↑ Выше</string>
+    <string name="channel_move_down">↓ Ниже</string>
+    <string name="channel_card_count">Карточек: %1$d</string>
+    <string name="channel_reset">Вернуть порядок по умолчанию</string>
 </resources>

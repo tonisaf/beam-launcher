@@ -65,10 +65,6 @@ private fun HomeScreenSettings() {
             LauncherSettings.homeLayout = HOME_GOOGLE_TV
         }
     }
-    val context = LocalContext.current
-    val channels by produceState(emptyList<TvChannel>()) {
-        value = withContext(Dispatchers.IO) { queryTvChannels(context).filter { it.items.isNotEmpty() } }
-    }
     Section(tr(R.string.show_on_home))
     Toggle(tr(R.string.now_playing), LauncherSettings.nowPlaying, Modifier.fillMaxWidth()) {
         LauncherSettings.nowPlaying = !LauncherSettings.nowPlaying
@@ -77,21 +73,7 @@ private fun HomeScreenSettings() {
     Toggle(tr(R.string.usb_tile), LauncherSettings.usbTile, Modifier.fillMaxWidth()) {
         LauncherSettings.usbTile = !LauncherSettings.usbTile
     }
-    Section(tr(R.string.second_row))
-    PairRow {
-        Chip(tr(R.string.auto), LauncherSettings.secondRow == SECOND_ROW_AUTO, Modifier.weight(1f)) {
-            LauncherSettings.secondRow = SECOND_ROW_AUTO
-        }
-        Chip(tr(R.string.off), LauncherSettings.secondRow == SECOND_ROW_OFF, Modifier.weight(1f)) {
-            LauncherSettings.secondRow = SECOND_ROW_OFF
-        }
-    }
-    channels.forEach { channel ->
-        Spacer(Modifier.height(10.dp))
-        Chip(channel.name, LauncherSettings.secondRow == channel.key || LauncherSettings.secondRow == channel.legacyKey, Modifier.fillMaxWidth()) {
-            LauncherSettings.secondRow = channel.key
-        }
-    }
+
 }
 
 /** XMB colour (by month like the PS3, or fixed) and the animation switch. */
