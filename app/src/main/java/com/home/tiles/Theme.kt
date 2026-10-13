@@ -20,6 +20,7 @@ object LauncherSettings {
     private val wallpaperDimState = mutableStateOf(25)
     private val soundsState = mutableStateOf(true)
     private val nowPlayingState = mutableStateOf(true)
+    private val hdmiTileState = mutableStateOf(true)
     private val usbTileState = mutableStateOf(true)
     private val secondRowState = mutableStateOf(SECOND_ROW_AUTO)
     private val channelRulesState = mutableStateOf<List<ChannelRule>?>(null)
@@ -40,6 +41,7 @@ object LauncherSettings {
         wallpaperDimState.value = prefs.getInt("wallpaperDim", 25).coerceIn(0, 80)
         soundsState.value = prefs.getBoolean("sounds", true)
         nowPlayingState.value = prefs.getBoolean("nowPlaying", true)
+        hdmiTileState.value = prefs.getBoolean("hdmiTile", true)
         usbTileState.value = prefs.getBoolean("usbTile", true)
         secondRowState.value = prefs.getString("secondRow", SECOND_ROW_AUTO) ?: SECOND_ROW_AUTO
         channelRulesState.value = prefs.getString("channelRules", null)?.let { raw ->
@@ -83,6 +85,10 @@ object LauncherSettings {
     var nowPlaying: Boolean
         get() = nowPlayingState.value
         set(value) { nowPlayingState.value = value; prefs.edit().putBoolean("nowPlaying", value).apply() }
+
+    var hdmiTile: Boolean
+        get() = hdmiTileState.value
+        set(value) { hdmiTileState.value = value; prefs.edit().putBoolean("hdmiTile", value).apply() }
 
     var usbTile: Boolean
         get() = usbTileState.value

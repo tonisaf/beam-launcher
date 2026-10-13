@@ -21,6 +21,7 @@
     <string name="theme_light">Светлая</string>
     <string name="theme_dark">Тёмная</string>
     <string name="now_playing">Сейчас играет</string>
+    <string name="hdmi_tile">Показывать HDMI</string>
     <string name="usb_tile">Плитка флешки</string>
     <string name="second_row">Второй ряд</string>
     <string name="auto">Авто</string>

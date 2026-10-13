@@ -21,6 +21,7 @@
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
     <string name="now_playing">Now playing</string>
+    <string name="hdmi_tile">Show HDMI</string>
     <string name="usb_tile">USB drive tile</string>
     <string name="second_row">Second row</string>
     <string name="auto">Auto</string>

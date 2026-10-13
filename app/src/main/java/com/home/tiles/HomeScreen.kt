@@ -38,6 +38,7 @@ private val RowLift = 150.dp
 internal sealed class RowItem(val key: String, val title: String, val subtitle: String = "") {
     class App(val entry: AppEntry) : RowItem(entry.pkg, entry.label)
     class Usb(val drive: UsbDrive) : RowItem("usb:${drive.key}", tr(R.string.usb_drive), drive.label)
+    class Hdmi(val input: HdmiInput) : RowItem("hdmi:${input.id}", input.label)
     class All(count: Int) : RowItem("__all__", tr(R.string.all_apps), tr(R.string.apps_count, count))
 }
 
@@ -60,7 +61,9 @@ fun HomeScreen(
     val showContinue = placements.any { it.position != ChannelPosition.HIDDEN && it.channel.items.isNotEmpty() }
     LaunchedEffect(resumeTick) { context.requestChannelRefresh() }
     val drives by rememberUsbDrives()
+    val inputs by rememberHdmiInputs(resumeTick)
     val items = buildList {
+        if (LauncherSettings.hdmiTile) inputs.forEach { add(RowItem.Hdmi(it)) }
         if (LauncherSettings.usbTile) drives.forEach { add(RowItem.Usb(it)) }
         apps.filter { !it.hidden }.forEach { add(RowItem.App(it)) }
         add(RowItem.All(apps.size))
@@ -69,6 +72,7 @@ fun HomeScreen(
     fun clickFor(item: RowItem): () -> Unit = if (moving != null) ({}) else when (item) {
         is RowItem.App -> { { context.launchApp(item.entry) } }
         is RowItem.Usb -> { { context.launchPackage(FILE_MANAGER) } }
+        is RowItem.Hdmi -> { { context.openHdmi(item.input) } }
         is RowItem.All -> onOpenAll
     }
     fun longClickFor(item: RowItem): () -> Unit = { if (moving == null && item is RowItem.App) onOptions(item.entry) }
@@ -108,6 +112,7 @@ internal fun RowItemArt(repo: AppRepository, item: RowItem) {
             AppArt(art, item.entry.label)
         }
         is RowItem.Usb -> UsbArt()
+        is RowItem.Hdmi -> HdmiArt()
         is RowItem.All -> AllAppsArt()
     }
 }

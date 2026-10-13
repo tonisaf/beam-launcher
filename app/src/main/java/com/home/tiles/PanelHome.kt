@@ -67,6 +67,10 @@ private fun HomeScreenSettings() {
         LauncherSettings.nowPlaying = !LauncherSettings.nowPlaying
     }
     Spacer(Modifier.height(10.dp))
+    Toggle(tr(R.string.hdmi_tile), LauncherSettings.hdmiTile, Modifier.fillMaxWidth()) {
+        LauncherSettings.hdmiTile = !LauncherSettings.hdmiTile
+    }
+    Spacer(Modifier.height(10.dp))
     Toggle(tr(R.string.usb_tile), LauncherSettings.usbTile, Modifier.fillMaxWidth()) {
         LauncherSettings.usbTile = !LauncherSettings.usbTile
     }
