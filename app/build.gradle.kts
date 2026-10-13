@@ -34,8 +34,8 @@ android {
         applicationId = "com.home.tiles"
         minSdk = 26
         targetSdk = 34
-        versionCode = 18
-        versionName = "0.4.14"
+        versionCode = 19
+        versionName = "1.0.0"
     }
 
     buildTypes {
