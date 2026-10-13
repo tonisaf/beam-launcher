@@ -31,6 +31,7 @@ fun SettingsPanel(onDismiss: () -> Unit) {
     val first = remember { FocusRequester() }
     var closeFocused by remember { mutableStateOf(false) }
     var channelsOpen by remember { mutableStateOf(false) }
+    var welcomeOpen by remember { mutableStateOf(false) }
     fun back() { if (channelsOpen) channelsOpen = false else onDismiss() }
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         BackHandler(onBack = ::back)
@@ -55,6 +56,7 @@ fun SettingsPanel(onDismiss: () -> Unit) {
                         if (channelsOpen) {
                             ChannelSettings()
                         } else {
+                            ListRow(tr(R.string.welcome_title)) { welcomeOpen = true }
                             ListRow(tr(R.string.channel_rows)) { channelsOpen = true }
                             AppearancePage()
                             Section(tr(R.string.interface_section))
@@ -71,5 +73,6 @@ fun SettingsPanel(onDismiss: () -> Unit) {
             withFrameNanos {}
             first.requestFocus()
         }
+        if (welcomeOpen) WelcomeDialog(onDismiss = { welcomeOpen = false })
     }
 }

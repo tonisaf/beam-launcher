@@ -71,8 +71,8 @@
     <string name="appearance_and_home">Appearance and home screen</string>
     <string name="show_on_home">On the home screen</string>
     <string name="home_layout">Home screen layout</string>
-    <string name="layout_switch">Switch style</string>
-    <string name="layout_google_tv">Google TV style</string>
+    <string name="layout_switch">Tiles</string>
+    <string name="layout_google_tv">Goldovaya</string>
     <string name="gtv_tab_home">Home</string>
     <string name="gtv_tab_apps">Apps</string>
     <string name="gtv_your_apps">Your apps</string>
@@ -94,4 +94,9 @@
     <string name="move_app_left">← Left</string>
     <string name="move_app_right">Right →</string>
     <string name="move_app_done">Done</string>
+    <string name="welcome_title">Initial setup</string>
+    <string name="welcome_hint">Choose your style. Changes appear immediately.</string>
+    <string name="welcome_layout">Home layout</string>
+    <string name="welcome_theme">Theme</string>
+    <string name="welcome_done">Done</string>
 </resources>

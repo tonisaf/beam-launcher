@@ -115,12 +115,13 @@ private fun LauncherApp(
     var movingApp by remember { mutableStateOf<AppEntry?>(null) }
     var panelOpen by remember { mutableStateOf(false) }
     var setupOpen by remember { mutableStateOf(false) }
+    var welcomeOpen by remember { mutableStateOf(!LauncherSettings.welcomeDone) }
     val context = LocalContext.current
     // Checked again whenever the launcher comes back, so a permission granted meanwhile drops off the list.
     val missing = remember(resumeTick, LauncherSettings.voiceAssistantEnabled) { Setup.missing(context) }
 
     LaunchedEffect(resumeTick) { screen = Screen.Home }
-    LaunchedEffect(missing) { if (Setup.shouldAutoShow(context, missing)) setupOpen = true }
+    LaunchedEffect(missing, welcomeOpen) { if (!welcomeOpen && Setup.shouldAutoShow(context, missing)) setupOpen = true }
     LaunchedEffect(panelRequest) { if (panelRequest > 0) panelOpen = true }
 
     Box(Modifier.fillMaxSize().background(Colors.backgroundBrush()).arrowSoundTracker()) {
@@ -143,6 +144,7 @@ private fun LauncherApp(
         }
         }
         if (panelOpen) SettingsPanel(onDismiss = { panelOpen = false })
+        if (welcomeOpen) WelcomeDialog(onDismiss = { welcomeOpen = false })
         if (setupOpen && missing.isNotEmpty()) SetupDialog(missing, onDismiss = { setupOpen = false })
         optionsFor?.let { entry ->
             OptionsDialog(entry, repo, onDismiss = { optionsFor = null }, onChanged = onChanged,

@@ -25,11 +25,14 @@ object LauncherSettings {
     private val homeLayoutState = mutableStateOf(HOME_SWITCH)
     private val xmbColorState = mutableStateOf(-1)
     private val bgAnimationState = mutableStateOf(true)
+    private val welcomeDoneState = mutableStateOf(false)
 
     fun init(context: Context) {
         // Shared by the launcher activity and the overlay service in the same process.
         if (::prefs.isInitialized) return
         prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        welcomeDoneState.value = prefs.getBoolean("welcomeDone", prefs.all.isNotEmpty())
+        prefs.edit().putBoolean("welcomeDone", welcomeDoneState.value).apply()
         darkState.value = prefs.getBoolean("dark", false)
         backgroundState.value = prefs.getInt("background", 0).coerceIn(Backgrounds.indices)
         soundsState.value = prefs.getBoolean("sounds", true)
@@ -54,6 +57,10 @@ object LauncherSettings {
     var dark: Boolean
         get() = darkState.value
         set(value) { darkState.value = value; prefs.edit().putBoolean("dark", value).apply() }
+
+    var welcomeDone: Boolean
+        get() = welcomeDoneState.value
+        set(value) { welcomeDoneState.value = value; prefs.edit().putBoolean("welcomeDone", value).apply() }
 
     var background: Int
         get() = backgroundState.value
