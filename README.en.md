@@ -25,13 +25,13 @@ Content rows require the source app to publish Android TV channels or Watch Next
 - Channels, USB, media status, voice keys and battery depend on system services, permissions and hardware. TV channels may be absent on ordinary Android firmware.
 - Device validation so far: XGIMI Play 6, Android 11. Compatibility with other models still requires testing.
 
-XGIMI APIs are optional. A read-only adapter obtains the battery level on supported XGIMI firmware; other devices use Android battery data. Beam has no projector picture, focus, keystone, HDMI, power or sleep-timer controls. Android settings open through a standard system intent.
+XGIMI APIs are optional. A read-only adapter obtains the battery level on supported XGIMI firmware; other devices use Android battery data. Beam has no projector picture, focus, keystone, HDMI, power or sleep-timer controls. Device settings open through a standard system intent; XGIMI firmware without that activity uses a fallback to the stock settings and quick-panel services. This opens the manufacturer UI without controlling hardware from Beam.
 
 ## Installation
 
 Download an APK from [Releases](https://github.com/tonisaf/beam-launcher/releases) or build the current source, install it and select Beam as Home in Android settings where supported.
 
-**Versions:** v0.4.2 contains the universal launcher and GitHub Releases updater. v0.3 predates these changes. Development source is on [codex/remove-xgimi](https://github.com/tonisaf/beam-launcher/tree/codex/remove-xgimi); see [PR #11](https://github.com/tonisaf/beam-launcher/pull/11) for integration into `main`.
+**Versions:** v0.4.3 contains the universal launcher and GitHub Releases updater. v0.3 predates these changes. Development source is on [codex/remove-xgimi](https://github.com/tonisaf/beam-launcher/tree/codex/remove-xgimi); see [PR #11](https://github.com/tonisaf/beam-launcher/pull/11) for integration into `main`.
 
 ```sh
 adb install -r app-release.apk
