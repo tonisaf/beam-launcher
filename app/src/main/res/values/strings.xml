@@ -8,8 +8,8 @@
     <string name="cant_open">Не удалось открыть</string>
     <string name="all_apps">Все приложения</string>
     <string name="menu_open">Открыть</string>
-    <string name="menu_unpin">Открепить</string>
-    <string name="menu_pin_first">Закрепить первым</string>
+    <string name="menu_unpin">Убрать из избранного</string>
+    <string name="menu_pin_first">Добавить в избранное</string>
     <string name="menu_show_home">Показать на главном</string>
     <string name="menu_hide_home">Скрыть с главного</string>
     <string name="menu_app_info">О приложении</string>
@@ -86,4 +86,12 @@
     <string name="channel_move_down">↓ Ниже</string>
     <string name="channel_card_count">Карточек: %1$d</string>
     <string name="channel_reset">Вернуть порядок по умолчанию</string>
+    <string name="menu_move">Переместить</string>
+    <string name="move_app_title">Переместить: %1$s</string>
+    <string name="move_app_hint">← → — перемещение, OK — сохранить, Назад — отменить. Избранные стоят первыми и перемещаются внутри своей группы.</string>
+    <string name="app_favourites">Избранное</string>
+    <string name="app_other">Остальные приложения</string>
+    <string name="move_app_left">← Влево</string>
+    <string name="move_app_right">Вправо →</string>
+    <string name="move_app_done">Готово</string>
 </resources>

@@ -61,7 +61,19 @@ class AppRepository(private val context: Context) {
 
     fun togglePinned(pkg: String) {
         val current = pinned
-        pinned = if (pkg in current) current - pkg else listOf(pkg) + current
+        pinned = if (pkg in current) current - pkg else current + pkg
+    }
+
+    private var manualOrder: List<String>?
+        get() = prefs.getString(KEY_ORDER, null)?.split(',')?.filter { it.isNotEmpty() }
+        set(value) = prefs.edit().putString(KEY_ORDER, value?.joinToString(",")).apply()
+
+    fun saveOrder(order: List<AppEntry>, knownApps: List<AppEntry>) {
+        val packages = order.map { it.pkg }.distinct()
+        manualOrder = packages + manualOrder.orEmpty().filter { it !in packages } +
+            knownApps.map { it.pkg }.filter { it !in packages && it !in manualOrder.orEmpty() }
+        val favourites = order.filter { it.pinned }.map { it.pkg }
+        pinned = favourites + pinned.filter { it !in favourites }
     }
 
     /** Launchable apps: pinned first, then most recently used, then by name. */
@@ -98,11 +110,7 @@ class AppRepository(private val context: Context) {
                 updated = updated,
             )
         }
-        return entries.sortedWith(
-            compareBy<AppEntry> { if (it.pinned) pins.indexOf(it.pkg) else Int.MAX_VALUE }
-                .thenByDescending { it.lastUsed }
-                .thenBy { it.label.lowercase() },
-        )
+        return sortApps(entries, pins, manualOrder)
     }
 
     /** Empty unless the usage-stats app-op was granted over adb. */
@@ -250,6 +258,7 @@ class AppRepository(private val context: Context) {
     companion object {
         private const val KEY_HIDDEN = "hidden"
         private const val KEY_PINNED = "pinned"
+        private const val KEY_ORDER = "appOrder"
         private const val USAGE_WINDOW_MS = 60L * 24 * 60 * 60 * 1000
         private const val FALLBACK_TILE = 0xFF5A5A5A.toInt()
 

@@ -342,12 +342,13 @@ fun NetworkIcon() {
 }
 
 @Composable
-fun OptionsDialog(entry: AppEntry, repo: AppRepository, onDismiss: () -> Unit, onChanged: () -> Unit) {
+fun OptionsDialog(entry: AppEntry, repo: AppRepository, onDismiss: () -> Unit, onChanged: () -> Unit, onMove: () -> Unit) {
     val context = LocalContext.current
     val art by rememberArt(repo, entry)
     val first = remember { FocusRequester() }
     val options = buildList<Pair<String, () -> Unit>> {
         add(tr(R.string.menu_open) to { context.launchApp(entry) })
+        if (!entry.hidden) add(tr(R.string.menu_move) to onMove)
         add((if (entry.pinned) tr(R.string.menu_unpin) else tr(R.string.menu_pin_first)) to { repo.togglePinned(entry.pkg); onChanged() })
         add((if (entry.hidden) tr(R.string.menu_show_home) else tr(R.string.menu_hide_home)) to { repo.toggleHidden(entry.pkg); onChanged() })
         add(tr(R.string.menu_app_info) to { context.openAppInfo(entry.pkg) })

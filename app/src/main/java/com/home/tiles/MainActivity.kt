@@ -112,6 +112,7 @@ private fun LauncherApp(
 ) {
     var screen by remember { mutableStateOf(Screen.Home) }
     var optionsFor by remember { mutableStateOf<AppEntry?>(null) }
+    var movingApp by remember { mutableStateOf<AppEntry?>(null) }
     var panelOpen by remember { mutableStateOf(false) }
     var setupOpen by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -144,7 +145,12 @@ private fun LauncherApp(
         if (panelOpen) SettingsPanel(onDismiss = { panelOpen = false })
         if (setupOpen && missing.isNotEmpty()) SetupDialog(missing, onDismiss = { setupOpen = false })
         optionsFor?.let { entry ->
-            OptionsDialog(entry, repo, onDismiss = { optionsFor = null }, onChanged = onChanged)
+            OptionsDialog(entry, repo, onDismiss = { optionsFor = null }, onChanged = onChanged,
+                onMove = { movingApp = entry })
+        }
+        movingApp?.let { entry ->
+            AppOrderDialog(repo, apps, entry.pkg,
+                onDismiss = { movingApp = null }, onSaved = onChanged)
         }
     }
 }

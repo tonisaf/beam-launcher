@@ -8,8 +8,8 @@
     <string name="cant_open">Couldn\'t open</string>
     <string name="all_apps">All apps</string>
     <string name="menu_open">Open</string>
-    <string name="menu_unpin">Unpin</string>
-    <string name="menu_pin_first">Pin first</string>
+    <string name="menu_unpin">Remove from favourites</string>
+    <string name="menu_pin_first">Add to favourites</string>
     <string name="menu_show_home">Show on home</string>
     <string name="menu_hide_home">Hide from home</string>
     <string name="menu_app_info">App info</string>
@@ -86,4 +86,12 @@
     <string name="channel_move_down">↓ Move down</string>
     <string name="channel_card_count">Cards: %1$d</string>
     <string name="channel_reset">Restore default order</string>
+    <string name="menu_move">Move</string>
+    <string name="move_app_title">Move: %1$s</string>
+    <string name="move_app_hint">← → to move, OK to save, Back to cancel. Favourites stay first and move within their own group.</string>
+    <string name="app_favourites">Favourites</string>
+    <string name="app_other">Other apps</string>
+    <string name="move_app_left">← Left</string>
+    <string name="move_app_right">Right →</string>
+    <string name="move_app_done">Done</string>
 </resources>
