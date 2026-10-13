@@ -11,7 +11,7 @@
     <string name="menu_hide_home">Скрыть с главного</string>
     <string name="menu_app_info">О приложении</string>
     <string name="menu_uninstall">Удалить</string>
-    <string name="usb_drive">Флешка</string>
+    <string name="usb_drive">USB</string>
     <string name="quick_settings">Быстрые настройки</string>
     <string name="settings">Настройки</string>
     <string name="appearance">Оформление</string>
@@ -22,7 +22,7 @@
     <string name="theme_dark">Тёмная</string>
     <string name="now_playing">Сейчас играет</string>
     <string name="hdmi_tile">Показывать HDMI</string>
-    <string name="usb_tile">Плитка флешки</string>
+    <string name="usb_tile">Плитка USB</string>
     <string name="second_row">Второй ряд</string>
     <string name="auto">Авто</string>
     <string name="off">Выкл</string>
