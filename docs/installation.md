@@ -43,3 +43,11 @@ adb shell cmd package resolve-activity --brief -a android.intent.action.MAIN -c 
 Проверьте и результат разрешения HOME, и само нажатие кнопки HOME. Производитель может ограничивать замену домашнего экрана. Универсальная установка не требует отключения штатных приложений, русификации прошивки или установки помощников кнопок.
 
 `tools/restore.ps1` предназначен для прежней конфигурации XGIMI Play 6: он меняет системные настройки и службы. Не используйте его как установщик для произвольного устройства.
+
+## Разрешение обновлений / Update installation permission
+
+If the firmware has no standard unknown-source settings screen, allow APK installation from Beam once via ADB. Android still asks to confirm each installation. / Если стандартного экрана разрешения нет, выдайте доступ через ADB один раз; каждую установку по-прежнему подтверждает пользователь.
+
+```sh
+adb shell appops set com.home.tiles REQUEST_INSTALL_PACKAGES allow
+```

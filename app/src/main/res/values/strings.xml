@@ -114,4 +114,6 @@
     <string name="update_install_hint">Android запросит подтверждение установки. Если нужно, разрешите установку из Beam и нажмите «Установить» ещё раз.</string>
     <string name="update_auto">Проверять автоматически</string>
     <string name="update_later">Позже</string>
+    <string name="update_install_error">Не удалось открыть установщик. Проверьте разрешение установки APK для Beam.</string>
+    <string name="update_permission_hint">Если прошивка не показывает разрешение установки, выдайте его один раз через ADB: adb shell appops set com.home.tiles REQUEST_INSTALL_PACKAGES allow</string>
 </resources>

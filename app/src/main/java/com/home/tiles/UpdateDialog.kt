@@ -35,7 +35,7 @@ internal fun UpdateDialog(onDismiss: () -> Unit) {
             val status = when {
                 Updates.busy && Updates.progress >= 0 -> tr(R.string.update_downloading, Updates.progress)
                 Updates.busy -> tr(R.string.update_checking)
-                Updates.error -> tr(R.string.update_error)
+                Updates.error -> tr(if (Updates.installError) R.string.update_install_error else R.string.update_error)
                 Updates.ready != null -> tr(R.string.update_ready)
                 release != null -> tr(R.string.update_available, release.tag)
                 Updates.checked -> tr(R.string.update_current)
@@ -54,6 +54,10 @@ internal fun UpdateDialog(onDismiss: () -> Unit) {
                 }
                 Spacer(Modifier.height(10.dp))
                 T(tr(R.string.update_install_hint), 14.sp, color = Colors.TextDim, maxLines = 3)
+                if (Updates.ready != null && !context.packageManager.canRequestPackageInstalls()) {
+                    Spacer(Modifier.height(8.dp))
+                    T(tr(R.string.update_permission_hint), 13.sp, color = Colors.TextDim, maxLines = 4)
+                }
                 Spacer(Modifier.height(12.dp))
                 if (release.notes.isNotBlank()) T(release.notes, 14.sp, color = Colors.TextDim, maxLines = 6)
             }

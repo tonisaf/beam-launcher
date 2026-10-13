@@ -31,6 +31,7 @@ internal object Updates {
     var checked by mutableStateOf(false); private set
     var progress by mutableStateOf(-1); private set
     var ready by mutableStateOf<File?>(null); private set
+    var installError by mutableStateOf(false); private set
 
     private fun prefs(context: Context) = context.getSharedPreferences("updates", Context.MODE_PRIVATE)
     fun autoEnabled(context: Context) = prefs(context).getBoolean("auto", true)
@@ -45,7 +46,7 @@ internal object Updates {
         val now = System.currentTimeMillis()
         val elapsed = now - prefs.getLong("checkedAt", 0)
         if (automatic && (!autoEnabled(context) || elapsed in 0 until DAY)) return false
-        busy = true; error = false; progress = -1
+        busy = true; error = false; installError = false; progress = -1
         try {
             val result = runInterruptible(Dispatchers.IO) {
                 val json = JSONObject(read(API, 1024 * 1024L).toString(Charsets.UTF_8))
@@ -73,7 +74,7 @@ internal object Updates {
     suspend fun download(context: Context) {
         val selected = release ?: return
         if (busy) return
-        busy = true; error = false; progress = 0; ready = null
+        busy = true; error = false; installError = false; progress = 0; ready = null
         try {
             ready = runInterruptible(Dispatchers.IO) {
                 val dir = File(context.cacheDir, "updates").apply { mkdirs() }
@@ -124,15 +125,20 @@ internal object Updates {
     fun install(context: Context): Boolean { return try {
         val file = ready ?: return false
         verifyApk(context, file)
-        if (!context.packageManager.canRequestPackageInstalls()) {
-            context.startActivity(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${context.packageName}")))
+        val permissionScreen = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${context.packageName}"))
+        error = false; installError = false
+        if (!context.packageManager.canRequestPackageInstalls() && permissionScreen.resolveActivity(context.packageManager) != null) {
+            context.startActivity(permissionScreen)
         } else {
             val uri = FileProvider.getUriForFile(context, "${context.packageName}.updates", file)
             context.startActivity(Intent(Intent.ACTION_VIEW).setDataAndType(uri, "application/vnd.android.package-archive")
                 .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION))
         }
         true
-    } catch (_: Exception) { error = true; false } }
+    } catch (failure: Exception) {
+        android.util.Log.w("BeamUpdates", "Cannot open installer", failure)
+        installError = true; error = true; false
+    } }
 
     private fun read(url: String, limit: Long): ByteArray = transfer(url, limit) { connection ->
         connection.inputStream.use { input ->
