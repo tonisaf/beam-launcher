@@ -6,7 +6,7 @@ A launcher for Android TVs, projectors and TV boxes, designed for remote control
 
 ## Features
 
-- Two Home layouts: **Tiles** and **Goldovaya** (round app icons and content rows).
+- Two Home layouts: **Tiles** and **Google TV** (round app icons and content rows).
 - Manual app order directly on Home in both layouts, fixed favorites and an all-apps screen. Open an app menu → Move; arrows move the selected icon in its existing row, OK saves, Back cancels. Favorites remain in their own leading group.
 - Preview channels and Continue Watching from installed apps: enable or hide each row, choose above or below apps, and reorder rows in each group.
 - Initial setup with language, layout previews and light/dark theme. Choices apply immediately; reopen it from Settings → Initial setup.
@@ -30,7 +30,7 @@ XGIMI APIs are optional. A read-only adapter obtains the battery level on suppor
 
 Download an APK from [Releases](https://github.com/tonisaf/beam-launcher/releases) or build the current source, install it and select Beam as Home in Android settings where supported.
 
-**Versions:** v0.4.4 contains the universal launcher and GitHub Releases updater. v0.3 predates these changes. Development source is on [codex/remove-xgimi](https://github.com/tonisaf/beam-launcher/tree/codex/remove-xgimi); see [PR #11](https://github.com/tonisaf/beam-launcher/pull/11) for integration into `main`.
+**Versions:** v0.4.5 contains the universal launcher and GitHub Releases updater. v0.3 predates these changes. Development source is on [codex/remove-xgimi](https://github.com/tonisaf/beam-launcher/tree/codex/remove-xgimi); see [PR #11](https://github.com/tonisaf/beam-launcher/pull/11) for integration into `main`.
 
 ```sh
 adb install -r app-release.apk

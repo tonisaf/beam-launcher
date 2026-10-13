@@ -58,7 +58,7 @@
     <string name="show_on_home">On the home screen</string>
     <string name="home_layout">Home screen layout</string>
     <string name="layout_switch">Tiles</string>
-    <string name="layout_google_tv">Goldovaya</string>
+    <string name="layout_google_tv">Google TV</string>
     <string name="gtv_tab_home">Home</string>
     <string name="gtv_tab_apps">Apps</string>
     <string name="gtv_your_apps">Your apps</string>

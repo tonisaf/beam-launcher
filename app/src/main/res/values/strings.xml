@@ -58,7 +58,7 @@
     <string name="show_on_home">На главном экране</string>
     <string name="home_layout">Раскладка главного экрана</string>
     <string name="layout_switch">Плитки</string>
-    <string name="layout_google_tv">Голдовая</string>
+    <string name="layout_google_tv">Google TV</string>
     <string name="gtv_tab_home">Главная</string>
     <string name="gtv_tab_apps">Приложения</string>
     <string name="gtv_your_apps">Ваши приложения</string>
