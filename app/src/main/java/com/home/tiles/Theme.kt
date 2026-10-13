@@ -16,6 +16,7 @@ object LauncherSettings {
 
     private val darkState = mutableStateOf(false)
     private val backgroundState = mutableStateOf(0)
+    private val wallpaperState = mutableStateOf(0L)
     private val soundsState = mutableStateOf(true)
     private val nowPlayingState = mutableStateOf(true)
     private val usbTileState = mutableStateOf(true)
@@ -34,6 +35,7 @@ object LauncherSettings {
         prefs.edit().putBoolean("welcomeDone", welcomeDoneState.value).apply()
         darkState.value = prefs.getBoolean("dark", false)
         backgroundState.value = prefs.getInt("background", 0).coerceIn(Backgrounds.indices)
+        wallpaperState.value = prefs.getLong("wallpaper", 0L)
         soundsState.value = prefs.getBoolean("sounds", true)
         nowPlayingState.value = prefs.getBoolean("nowPlaying", true)
         usbTileState.value = prefs.getBoolean("usbTile", true)
@@ -62,7 +64,11 @@ object LauncherSettings {
 
     var background: Int
         get() = backgroundState.value
-        set(value) { backgroundState.value = value; prefs.edit().putInt("background", value).apply() }
+        set(value) { backgroundState.value = value; wallpaper = 0L; prefs.edit().putInt("background", value).apply() }
+
+    var wallpaper: Long
+        get() = wallpaperState.value
+        set(value) { wallpaperState.value = value; prefs.edit().putLong("wallpaper", value).apply() }
 
     var sounds: Boolean
         get() = soundsState.value
@@ -120,7 +126,7 @@ object Colors {
     val Accent = Color(0xFF00C3E3)
     val AccentGlow = Color(0xFF7FF0FF)
 
-    val isXmb get() = Backgrounds[LauncherSettings.background].xmb
+    val isXmb get() = LauncherSettings.wallpaper == 0L && Backgrounds[LauncherSettings.background].xmb
 
     fun backgroundBrush(): Brush = presetBrush(Backgrounds[LauncherSettings.background])
 

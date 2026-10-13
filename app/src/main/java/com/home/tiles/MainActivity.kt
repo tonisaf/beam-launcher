@@ -168,6 +168,7 @@ private fun LauncherApp(
             }
         }) {
         if (Colors.isXmb) XmbBackground()
+        if (LauncherSettings.wallpaper != 0L) WallpaperBackground()
         Box {
         when (screen) {
             Screen.Home -> HomeScreen(

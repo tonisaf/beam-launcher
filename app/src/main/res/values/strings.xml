@@ -103,4 +103,11 @@
     <string name="update_install_error">Не удалось открыть установщик. Проверьте разрешение установки APK для Beam.</string>
     <string name="update_permission_hint">Если прошивка не показывает разрешение установки, выдайте его один раз через ADB: adb shell appops set com.home.tiles REQUEST_INSTALL_PACKAGES allow</string>
     <string name="move_app_cancel">Отмена</string>
+    <string name="wallpaper_custom">Своя картинка</string>
+    <string name="wallpaper_choose">Выбрать картинку</string>
+    <string name="wallpaper_reset">Вернуть стандартный фон</string>
+    <string name="wallpaper_loading">Загрузка картинки…</string>
+    <string name="wallpaper_failed">Не удалось открыть картинку. Выберите изображение до 32 МБ.</string>
+    <string name="wallpaper_permission">Для галереи разрешите Beam доступ к фотографиям.</string>
+    <string name="wallpaper_empty">Изображений нет. Сохраните картинку в папку Pictures или Download и откройте выбор снова.</string>
 </resources>

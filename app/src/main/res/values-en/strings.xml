@@ -103,4 +103,11 @@
     <string name="update_install_error">Could not open the installer. Check the APK installation permission for Beam.</string>
     <string name="update_permission_hint">If your firmware has no install-permission screen, grant it once over ADB: adb shell appops set com.home.tiles REQUEST_INSTALL_PACKAGES allow</string>
     <string name="move_app_cancel">Cancel</string>
+    <string name="wallpaper_custom">Custom image</string>
+    <string name="wallpaper_choose">Choose image</string>
+    <string name="wallpaper_reset">Restore preset background</string>
+    <string name="wallpaper_loading">Loading image…</string>
+    <string name="wallpaper_failed">Could not open the image. Choose an image up to 32 MB.</string>
+    <string name="wallpaper_permission">Allow Beam to access photos for the gallery.</string>
+    <string name="wallpaper_empty">No images found. Save an image in Pictures or Download and open the picker again.</string>
 </resources>

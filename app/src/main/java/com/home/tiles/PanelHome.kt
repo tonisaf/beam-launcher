@@ -31,12 +31,13 @@ internal fun AppearancePage() {
         Chip(tr(R.string.theme_light), !dark, Modifier.weight(1f)) { LauncherSettings.dark = false }
         Chip(tr(R.string.theme_dark), dark, Modifier.weight(1f)) { LauncherSettings.dark = true }
     }
-    Section(tr(R.string.background_name, Backgrounds[LauncherSettings.background].name))
+    Section(tr(R.string.background_name, if (LauncherSettings.wallpaper != 0L) tr(R.string.wallpaper_custom) else Backgrounds[LauncherSettings.background].name))
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
         Backgrounds.forEachIndexed { i, preset ->
-            Swatch(Colors.presetBrush(preset), LauncherSettings.background == i) { LauncherSettings.background = i }
+            Swatch(Colors.presetBrush(preset), LauncherSettings.wallpaper == 0L && LauncherSettings.background == i) { LauncherSettings.background = i }
         }
     }
+    WallpaperSettings()
     if (Colors.isXmb) XmbOptions()
     // Each language is named in itself, so it can be found whatever the interface is set to.
     Section(tr(R.string.language))

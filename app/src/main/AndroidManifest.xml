@@ -26,6 +26,9 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <!-- Android 12+ lets the user grant only this one; the pair is required for fine location. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Only needed for the fallback gallery when firmware has no document picker. -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
     <!-- Wi-Fi status displayed by the launcher. -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
