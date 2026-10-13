@@ -8,7 +8,7 @@ Install a compatible APK and select Beam as Home in Android settings. For ADB in
 
 Hold OK on an app (or use the remote menu button) to open its menu. Move changes order directly on Home: arrows move, OK saves, Back cancels. Favorites stay at the front. Configure individual content rows above or below apps in Beam settings.
 
-HDMI tiles require a connected source reported by Android and a stock input player. Show HDMI controls their visibility. USB tiles appear for mounted removable drives when USB tile is enabled; opening one requires the file manager available on the device.
+HDMI tiles require a connected source reported by Android and a stock input player. Show HDMI controls their visibility. USB tiles appear for mounted removable drives when USB tile is enabled; opening currently targets `com.xgimi.filemanager`, so other firmware requires that compatible app to be installed.
 
 ## Updating Beam
 
