@@ -31,7 +31,7 @@ XGIMI APIs are optional. A read-only adapter obtains the battery level on suppor
 
 Download an APK from [Releases](https://github.com/tonisaf/beam-launcher/releases) or build the current source, install it and select Beam as Home in Android settings where supported.
 
-**Source versus published release:** the universal launcher changes are currently on [codex/remove-xgimi](https://github.com/tonisaf/beam-launcher/tree/codex/remove-xgimi). Published release **v0.3 (2026-10-05)** predates them. This README describes that branch, not the old release APK; a new release is required to distribute these changes.
+**Versions:** v0.4 contains the universal launcher and GitHub Releases updater. v0.3 predates these changes. Development source is on [codex/remove-xgimi](https://github.com/tonisaf/beam-launcher/tree/codex/remove-xgimi); see [PR #11](https://github.com/tonisaf/beam-launcher/pull/11) for integration into `main`.
 
 ```sh
 adb install -r app-release.apk
@@ -79,6 +79,14 @@ To check: `--ez voice_status true`. To make the microphone buttons in other apps
 SmartTube) use Beam as well, set it as the system recognizer (optional):
 `adb shell settings put secure voice_recognition_service com.home.tiles/com.home.tiles.VoskRecognitionService`.
 
+
+## Updates
+
+Beam checks the latest stable [GitHub Release](https://github.com/tonisaf/beam-launcher/releases/latest) when Home opens, at most once per day. In Settings → Beam updates you can check manually or disable automatic checks. Selecting Later suppresses automatic offers for that release; manual checks remain available. Failed checks retry after one hour. There is no background silent installation.
+
+Select Download update, then Install. Beam verifies asset size and GitHub SHA-256 digest, package identity, the installed signing certificate and a strictly higher versionCode. Android asks for installation confirmation. If prompted, permit APK installation from Beam and select Install again. Downloads interrupted by closing the dialog are discarded; reopen it and retry.
+
+Publish stable numeric tags (`v0.4`, `v0.5`, `v1.0.1`) with an asset named `app-release.apk`. Preserve the release signing key and increase both versionName and versionCode. The asset must have the GitHub `sha256:` digest; APKs without it are rejected. The app contains no GitHub token and downloads only public releases. See [release procedure](docs/releases.md).
 
 ## Building
 

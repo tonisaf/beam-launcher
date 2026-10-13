@@ -99,4 +99,19 @@
     <string name="welcome_layout">Home layout</string>
     <string name="welcome_theme">Theme</string>
     <string name="welcome_done">Done</string>
+    <string name="update_title">Beam updates</string>
+    <string name="update_installed">Installed version %1$s</string>
+    <string name="update_downloading">Downloading: %1$d%%</string>
+    <string name="update_checking">Checking for updates…</string>
+    <string name="update_error">Could not check or download the update. Please try again.</string>
+    <string name="update_ready">APK verified and ready to install</string>
+    <string name="update_available">Version %1$s is available</string>
+    <string name="update_current">You are up to date</string>
+    <string name="update_hint">Updates are downloaded from GitHub Releases</string>
+    <string name="update_check">Check for updates</string>
+    <string name="update_install">Install</string>
+    <string name="update_download">Download update</string>
+    <string name="update_install_hint">Android will ask you to confirm installation. If needed, allow installs from Beam and select Install again.</string>
+    <string name="update_auto">Check automatically</string>
+    <string name="update_later">Later</string>
 </resources>

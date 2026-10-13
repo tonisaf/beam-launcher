@@ -99,4 +99,19 @@
     <string name="welcome_layout">Раскладка главного экрана</string>
     <string name="welcome_theme">Тема</string>
     <string name="welcome_done">Готово</string>
+    <string name="update_title">Обновление Beam</string>
+    <string name="update_installed">Установлена версия %1$s</string>
+    <string name="update_downloading">Скачивание: %1$d%%</string>
+    <string name="update_checking">Проверка обновлений…</string>
+    <string name="update_error">Не удалось проверить или скачать обновление. Попробуйте ещё раз.</string>
+    <string name="update_ready">APK проверен и готов к установке</string>
+    <string name="update_available">Доступна версия %1$s</string>
+    <string name="update_current">Установлена актуальная версия</string>
+    <string name="update_hint">Обновления загружаются из GitHub Releases</string>
+    <string name="update_check">Проверить обновления</string>
+    <string name="update_install">Установить</string>
+    <string name="update_download">Скачать обновление</string>
+    <string name="update_install_hint">Android запросит подтверждение установки. Если нужно, разрешите установку из Beam и нажмите «Установить» ещё раз.</string>
+    <string name="update_auto">Проверять автоматически</string>
+    <string name="update_later">Позже</string>
 </resources>

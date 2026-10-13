@@ -20,6 +20,7 @@
     <!-- Runtime permission, granted over adb: lets us see other apps' non-browsable channels. -->
     <uses-permission android:name="android.permission.READ_TV_LISTINGS" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
     <!-- Location permission lets Android disclose the connected Wi-Fi network name. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -103,6 +104,11 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+
+        <provider android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.updates" android:exported="false" android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/update_paths" />
+        </provider>
 
         <!-- Optional read-only battery API on XGIMI; Android reports no battery on this firmware. -->
         <uses-library android:name="com.xgimi.api" android:required="false" />
