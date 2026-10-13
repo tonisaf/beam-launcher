@@ -11,6 +11,12 @@ import android.content.Intent
 class AdbCommandReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         LauncherSettings.init(context)
+        // Shell-only maintenance: reset the automatic update interval without changing preferences.
+        if (intent.getBooleanExtra("reset_update_check", false)) {
+            val saved = context.getSharedPreferences("updates", Context.MODE_PRIVATE)
+                .edit().remove("checkedAt").commit()
+            resultData = if (saved) "update check interval reset" else "reset failed"
+        }
         // Appearance, for testing without the remote: --es background XMB, --ez bg_animation false
         intent.getStringExtra("background")?.let { name ->
             val index = Backgrounds.indexOfFirst { it.name.equals(name, ignoreCase = true) }
