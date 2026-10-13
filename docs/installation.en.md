@@ -8,7 +8,9 @@ Install a compatible APK and select Beam as Home in Android settings. For ADB in
 
 Custom image: Beam Settings → Choose image. The system document picker normally opens, including available USB drives and providers. Firmware without a picker uses the Android gallery; Beam requests photo access when needed. The gallery shows the latest 300 MediaStore images (with thumbnails on Android 10+). If an image is missing, save it in Pictures or Download and wait for Android media indexing.
 
-Images up to 32 MB are copied into Beam storage and downsampled to at most 2048 pixels on the longest side. The static background crops to fill the screen and is slightly darkened. Restore preset background or select a color preset to disable the image. XMB and a custom image are mutually exclusive.
+Selecting an image opens a preview behind real Home icons and content cards. Use left/right arrows to adjust dimming from 0 to 80%, then choose Apply. Cancel and Back preserve the previous image and dimming. Reopen Background preview for the saved image, or adjust Dimming in settings. The gallery displays a three-column image grid.
+
+Images up to 32 MB are copied into Beam storage and downsampled to at most 2048 pixels on the longest side. The static background crops to fill the screen. Both the image and dimming survive restarts. Restore preset background or select a color preset to disable the image. XMB and a custom image are mutually exclusive.
 
 The launcher runs without granting every optional permission. The separate “Beam: missing setup” dialog lists missing permissions on your device. Grant only those needed for the features you use:
 

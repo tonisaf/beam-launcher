@@ -17,6 +17,7 @@ object LauncherSettings {
     private val darkState = mutableStateOf(false)
     private val backgroundState = mutableStateOf(0)
     private val wallpaperState = mutableStateOf(0L)
+    private val wallpaperDimState = mutableStateOf(25)
     private val soundsState = mutableStateOf(true)
     private val nowPlayingState = mutableStateOf(true)
     private val usbTileState = mutableStateOf(true)
@@ -36,6 +37,7 @@ object LauncherSettings {
         darkState.value = prefs.getBoolean("dark", false)
         backgroundState.value = prefs.getInt("background", 0).coerceIn(Backgrounds.indices)
         wallpaperState.value = prefs.getLong("wallpaper", 0L)
+        wallpaperDimState.value = prefs.getInt("wallpaperDim", 25).coerceIn(0, 80)
         soundsState.value = prefs.getBoolean("sounds", true)
         nowPlayingState.value = prefs.getBoolean("nowPlaying", true)
         usbTileState.value = prefs.getBoolean("usbTile", true)
@@ -69,6 +71,10 @@ object LauncherSettings {
     var wallpaper: Long
         get() = wallpaperState.value
         set(value) { wallpaperState.value = value; prefs.edit().putLong("wallpaper", value).apply() }
+
+    var wallpaperDim: Int
+        get() = wallpaperDimState.value
+        set(value) { wallpaperDimState.value = value.coerceIn(0, 80); prefs.edit().putInt("wallpaperDim", wallpaperDimState.value).apply() }
 
     var sounds: Boolean
         get() = soundsState.value

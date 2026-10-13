@@ -110,4 +110,8 @@
     <string name="wallpaper_failed">Could not open the image. Choose an image up to 32 MB.</string>
     <string name="wallpaper_permission">Allow Beam to access photos for the gallery.</string>
     <string name="wallpaper_empty">No images found. Save an image in Pictures or Download and open the picker again.</string>
+    <string name="wallpaper_preview">Background preview</string>
+    <string name="wallpaper_dim">Dimming</string>
+    <string name="wallpaper_apply">Apply</string>
+    <string name="wallpaper_cancel">Cancel</string>
 </resources>

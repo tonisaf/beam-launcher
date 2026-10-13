@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -112,6 +113,7 @@ private fun LauncherApp(
     onChanged: () -> Unit,
 ) {
     var screen by remember { mutableStateOf(Screen.Home) }
+    DisposableEffect(Unit) { onDispose { WallpaperPreview.cancel() } }
     var optionsFor by remember { mutableStateOf<AppEntry?>(null) }
     var moving by remember { mutableStateOf<HomeMove?>(null) }
     var savedOrder by remember { mutableStateOf<List<String>?>(null) }
@@ -167,8 +169,8 @@ private fun LauncherApp(
                 else -> false
             }
         }) {
-        if (Colors.isXmb) XmbBackground()
-        if (LauncherSettings.wallpaper != 0L) WallpaperBackground()
+        if (Colors.isXmb && WallpaperPreview.draft == null) XmbBackground()
+        if (LauncherSettings.wallpaper != 0L || WallpaperPreview.draft != null) WallpaperBackground()
         Box {
         when (screen) {
             Screen.Home -> HomeScreen(
@@ -188,7 +190,8 @@ private fun LauncherApp(
             )
         }
         }
-        if (panelOpen) SettingsPanel(onDismiss = { panelOpen = false })
+        if (panelOpen && WallpaperPreview.draft == null) SettingsPanel(onDismiss = { panelOpen = false })
+        if (WallpaperPreview.draft != null) WallpaperPreviewControls()
         if (welcomeOpen) WelcomeDialog(onDismiss = { welcomeOpen = false })
         if (updateOpen && !welcomeOpen && !setupOpen && !panelOpen && moving == null) UpdateDialog(onDismiss = { updateOpen = false })
         if (setupOpen && missing.isNotEmpty()) SetupDialog(missing, onDismiss = { setupOpen = false })

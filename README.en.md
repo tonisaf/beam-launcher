@@ -11,7 +11,7 @@ A launcher for Android TVs, projectors and TV boxes, designed for remote control
 - Preview channels and Continue Watching from installed apps: enable or hide each row, choose above or below apps, and reorder rows in each group.
 - Initial setup with language, layout previews and light/dark theme. Choices apply immediately; reopen it from Settings → Initial setup.
 - Launcher preferences: theme, backgrounds including animated XMB, language, layout, and sounds.
-- Custom background image: Settings → Choose image. Beam stores its own copy, which survives restarts and removal of the source drive. Switch back to any preset background at any time.
+- Custom background image: Settings → Choose image. Thumbnail grid, preview behind real icons and content cards, 0–80% dimming and explicit Apply/Cancel. Beam stores its own copy, which survives restarts and removal of the source drive. Switch back to any preset background at any time.
 - USB storage, Now Playing, network status and battery level where the device provides it.
 
 Content rows require the source app to publish Android TV channels or Watch Next entries. Beam displays and arranges that content; installing an app alone does not guarantee rows. LAMPA history and recommendations have been verified on the test device; YouTube currently publishes no rows there.
@@ -31,7 +31,7 @@ XGIMI APIs are optional. A read-only adapter obtains the battery level on suppor
 
 Download an APK from [Releases](https://github.com/tonisaf/beam-launcher/releases) or build the current source, install it and select Beam as Home in Android settings where supported.
 
-**Versions:** v0.4.8 contains the universal launcher and GitHub Releases updater. v0.3 predates these changes. Development source is on [codex/remove-xgimi](https://github.com/tonisaf/beam-launcher/tree/codex/remove-xgimi); see [PR #11](https://github.com/tonisaf/beam-launcher/pull/11) for integration into `main`.
+**Versions:** v0.4.9 contains the universal launcher and GitHub Releases updater. v0.3 predates these changes. Development source is on [codex/remove-xgimi](https://github.com/tonisaf/beam-launcher/tree/codex/remove-xgimi); see [PR #11](https://github.com/tonisaf/beam-launcher/pull/11) for integration into `main`.
 
 ```sh
 adb install -r app-release.apk

@@ -110,4 +110,8 @@
     <string name="wallpaper_failed">Не удалось открыть картинку. Выберите изображение до 32 МБ.</string>
     <string name="wallpaper_permission">Для галереи разрешите Beam доступ к фотографиям.</string>
     <string name="wallpaper_empty">Изображений нет. Сохраните картинку в папку Pictures или Download и откройте выбор снова.</string>
+    <string name="wallpaper_preview">Предпросмотр фона</string>
+    <string name="wallpaper_dim">Затемнение</string>
+    <string name="wallpaper_apply">Применить</string>
+    <string name="wallpaper_cancel">Отмена</string>
 </resources>
