@@ -1,5 +1,7 @@
 # XGIMI Play 6 firmware: how Beam calls the stock functions
 
+> **Historical document.** This describes the former XGIMI-specific Beam integration, preserved in the [archive branch](https://github.com/tonisaf/beam-launcher/tree/codex/archive-xgimi-2026-10-13). Projector controls and the floating panel were removed from the universal launcher. Code references below refer to that archived version. For current features and requirements see [README](../README.en.md).
+
 [Русская версия](xgimi-firmware.md)
 
 A report on what was found in the firmware of the XGIMI Play 6 (Android 11) and how Beam controls
@@ -23,6 +25,8 @@ on any error.
 - [Power](#power)
 - [Other](#other)
 - [Remote](#remote)
+- [Network control: the XGIMI app's protocol](#network-control-the-xgimi-apps-protocol)
+- [The Russian skin and other XGIMI apps](#the-russian-skin-and-other-xgimi-apps)
 - [Firmware quirks and pitfalls](#firmware-quirks-and-pitfalls)
 - [Permissions granted over adb](#permissions-granted-over-adb)
 - [How to research further](#how-to-research-further)
@@ -212,7 +216,7 @@ behaviour.
 | Auto from the tilt sensor | `MotionDetectionManager.getAutoReverse()` / `setAutoReverse(boolean)` | |
 | Fine picture tilt | `SystemManager.setScreenRotation(int, float)` | 5 clockwise, 6 counter-clockwise; step 0.5° |
 | Keystone corners | `DisplayManager.getCorrectKeystone(KeyStoneFullCoordinates)` / `correctKeystone(KeyStoneFullCoordinates)` | see below |
-| Digital zoom | `DisplayManager.setDigitalZoomStep(int)`, `getCurrentZoomStep(0)` | 0 = full size … 32 (`ZoomStepRange.zoomOutDigtalMaxNum`) |
+| Digital zoom | `DisplayManager.zoomStart(int)`, `setDigitalZoomStep(int)`, `getCurrentZoomStep(0)`, `zoomFinish(int)` | 0 = full size … 32; see "Zoom session" below |
 | Auto keystone | `ProjectorFocusManager.getInstance().newAutoKst(9)` | 9 — the way the settings call it |
 
 `com.xgimi.gmpf.rp.KeyStoneFullCoordinates` contains the field `coordinates` — a 9×9 grid of points
@@ -223,7 +227,21 @@ corner. "No correction" is the corners at (0,0), (1919,0), (0,1079), (1919,1079)
 Shifting the picture is moving all four corners at once. It only works when the picture has been
 reduced with the zoom.
 
-`getCurrentZoomStep` doesn't return the step that was set, so Beam stores it itself.
+### Zoom session
+
+`setDigitalZoomStep` is only accepted inside a session: `zoomStart(1)` … `zoomFinish(1)` (1 is
+the type XGIMI's own "Zoom and shift" page opens its session with). Outside one the firmware logs
+`XGIMI_ZOOM_CTL: steps is ERR` to logcat while the call itself returns normally, so the refusal
+can't be seen from the return value.
+
+Inside a session the firmware moves the picture **one step per call** toward the requested one: a
+call with step 8 from zero gives step 1. Beam therefore repeats the call until
+`getCurrentZoomStep(0)` returns the number it wants (the getter is reliable for that, also after
+`zoomFinish`, so the step doesn't have to be stored separately). The calls are fast: five in a row
+take under a second.
+
+Opening a session moves the top corners of the correction about (11, 6) pixels from "no
+correction". "No correction" (writing the corners) puts the exact values back.
 
 ## Focus and sensors
 
@@ -242,7 +260,10 @@ reduced with the zoom.
 |---|---|
 | Battery | `com.xgimi.gmpf.api.PowerManager.getBatteryLevel()` (0..100), `isAdapterPowered()` |
 | Power menu | the `com.xgimi.action.WINODWSYSTEM` intent |
-| Power off (standby, like from the remote) | the same intent to the package `com.xgimi.shutdown`, sent **twice** with a pause of ~1.5 s: a repeated request while the menu is open turns the projector off |
+| Power off (standby, like from the remote) | accessibility service: `performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)`. The system logs `Going to sleep due to power_button`, the projector goes into standby and drops off the network, no menu on screen |
+| The same without the accessibility service | the `WINODWSYSTEM` intent to the package `com.xgimi.shutdown`, sent **twice** with a pause of ~1.5 s: a repeated request while the menu is open turns the projector off |
+| Restart without the menu | the broadcast `com.xgimi.systemui.OPEN_RESTART_DEVICE` with the permission `com.xgimi.permission.system` (protection level `normal`, granted at install). The power menu handles it as a tap on "Restart" |
+| Android's own power menu | `performGlobalAction(GLOBAL_ACTION_POWER_DIALOG)`: a "Lock / Power off / Restart" window in the system language. "Power off" there most likely cuts the power completely; not tried |
 | Power-on chime | `SystemManager.isPowerOnMusicEnabled()` / `enablePowerOnMusic(boolean)` |
 
 Android's standard battery service on the projector is a stub: "no battery", always 100%. The real
@@ -250,14 +271,19 @@ charge exists only in XGIMI's `PowerManager`. There are no change events, so Bea
 minute.
 
 XGIMI's sleep timer exists only in the Chinese power menu. Beam keeps its own timer
-(`AlarmManager`) and turns the projector off through the power menu.
+(`AlarmManager`) and turns the projector off by locking the screen (fallback: the power menu).
+
+The command `com.xgimi.action.shutdown` with `action=com.xgimi.action.strScreenOff` does not turn the
+screen off: the power menu only resets its own state. Turning off just the screen, without putting the
+projector into standby, was not found possible.
 
 ## Other
 
 | Function | Call |
 |---|---|
 | Screensaver delay | `Settings.System.SCREEN_OFF_TIMEOUT` (ms; "never" = `Int.MAX_VALUE`) |
-| "Any Door" (任意门) scenes, also the screensaver | the app `com.xgimi.atmosphere` |
+| "Any Door" (任意门) scenes | the app `com.xgimi.atmosphere` 6.0.0.33: launcher activity `.ScreensaverActivity`; settings via `com.xgimi.atmosphere.action.SETTING_MANAGE` / `SCREENSAVER_MANAGE` / `SCREENSAVER_CAROUSEL`. Ships its own DreamService `.view.AmbientService`, but it is not the selected one |
+| System screensaver (DreamService) | `com.xgimi.screensaver/.service.ScreenSaverDreamService` (6.0.1_lite), stored in `Settings.Secure.screensaver_components`; `screensaver_enabled=1` |
 | File manager | `com.xgimi.filemanager` |
 | Model, firmware, serial number | the properties `ro.boot.xgimi.modelname`, `ro.build.version.incremental`, `ro.boot.serialno` |
 
@@ -287,6 +313,95 @@ ADPCM) gives the sound from the remote's microphone to any app through the ordin
 When the button is released the input is silent: there is no built-in microphone. A click from the
 remote is audible in the first ~0.3 s of the stream.
 
+## Network control: the XGIMI app's protocol
+
+I took apart the official "XGIMI" app (`com.xgimi.zhushou` 4.10.32, decompiled with jadx, class
+`com.xgimi.control.manager.ConnectManagerV2`) and tested it on the Play 6. Controlling the
+projector over Wi-Fi needs no Chinese account: the protocol is local, and only the app's own UI
+asks for the cloud or WeChat (`isLogin()` blocks auto-connect and the device list).
+
+| Port | What it is | Result on the Play 6 |
+|---|---|---|
+| UDP **16735** | Keys: the string `KEYPRESSES:<code>` | Works without pairing, the projector answers `XGIMI_UCONTROL` |
+| UDP 16752 | Discovery: `{"action":9998,"msgid":"1","appid":"1"}` | Port closed, no reply |
+| UDP 16750 | JSON commands (`VcontrolCmd`: picture mode, HDMI, app launch) | Port closed |
+| TCP 13145 | The same plus pairing (`AuthCode`, action 50001) | Connection refused |
+| UDP 16737 | Not mentioned in the app | Open, but silent to any packet. The owner can't be found without root |
+
+Key codes for `KEYPRESSES:<code>`:
+
+| Button | Code | Button | Code |
+|---|---|---|---|
+| Left / Right | 50 / 37 | Home / Back | 35 / 48 |
+| Up / Down | 36 / 38 | Menu | 139 |
+| OK | 49 | Volume + / − | 115 / 114 |
+| Power (off) | 116 | Quick menu | 251 |
+
+Holding: `KEYSSTATUS:<code>+1` on press and `KEYSSTATUS:<code>+0` on release (that's how the app does
+a long press on the arrows, OK and Home).
+
+**Focus** goes through the same channel: `KEYSSTATUS:253+1` … `KEYSSTATUS:253+0` in one direction
+and `254` in the other. Checked in logcat: the motor steps (`MOTOR_CUR_STEP`) and the firmware
+sends `electromotion focus stop`. Which direction is nearer and which is farther can only be seen
+in the picture.
+
+Volume was checked with `dumpsys audio`: `KEYPRESSES:115` raised the speaker volume by 2 (16 → 18)
+and `114` brought it back.
+
+What this doesn't give you: the picture and HDMI commands from `VcontrolCmd` go to closed ports,
+so they can't be sent over the network on this firmware. For those, use the ways to call it from
+the start of this report.
+
+Test script: [`tools/xgimi_probe.py`](../tools/xgimi_probe.py) (`search`, `key`, `cmd`, `tcp`).
+
+## The Russian skin and other XGIMI apps
+
+Translating the stock screens without root rests on a "skin". Every XGIMI app embeds
+`com.xgimi.gimiskin.sdk.SkinEngine`: it loads the APK named by the property
+`persist.sys.xgimi.themeV2.url` into a separate `AssetManager` and replaces strings **by resource name**.
+This is not an RRO and not an id merge. The skin (resources only, no code) lives in `skin/` of the separate [xgimi-russifier](https://github.com/tonisaf/xgimi-russifier) project and is built by `skin/build.ps1`.
+
+The replacement happens in two places:
+- `DynamicResource.getString(id)` in the cell library, called by `TextComponent.setText(int)`. If the name is not in
+  the skin, the app's own string is used.
+- `SkinEngine.getString(int)` in XGIMI's buttons and dialogs.
+
+When inflating XML, `SkinFactory` replaces colours, images and styles, but not `android:text`. Text taken through
+`Context.getString`, `TextView.setText(int)` or XML is not changed by the skin. That is why the engine is in
+almost every app but works on text in far fewer. The left column of the settings, the quick-panel tiles and the
+power menu are not translated by the skin.
+
+**Checking an app without translating it.** Build a probe skin in which every Chinese string of the app is
+`RU|` plus the original, put it into `themeV2.url`, stop the app (`am force-stop`) and open it. A marker on
+screen means the text goes through the skin; no marker means a translation would change nothing. Control: the
+same markers in the settings app, where the skin is known to work. Afterwards point the property back at the
+real skin. A static smali scan gives only an upper bound: it counted `current_system_version` as replaceable,
+and on screen "当前版本" stayed Chinese.
+
+Checked (Chinese strings by default):
+
+| App | Strings | Via the skin (by code) | Not in the skin | On the device |
+|---|---|---|---|---|
+| System update `upgrade` | 106 | 5 | 1 | main screen, no markers |
+| Wireless casting `wirelessscreen` | 190 | 6 | 3 | main screen, no markers |
+| File manager `filemanager` | 23 | 4 | 0 | main screen, no markers |
+| HDMI player `xhplayer` | 25 | 4 | 0 | not opened |
+| Auto keystone `autokst` | 131 | 0 (the engine is never called) | 0 | not opened: it is a calibration app and may change factory data |
+| Accessories `ota.accessories` | 189 | 31 | 27 | not opened: update dialogs for the curtain, speaker and HDMI dongle |
+
+The `autokst` app is not what the user sees: it is a factory calibration station (gyroscope, warm-up,
+projection positions), and it has no skin engine. The messages of the real auto keystone are drawn by SystemUI,
+and by default they are in English ("Auto-focusing, please wait", "Automatic correction completed"). Of the 114
+related strings, 14 go through the skin (the environment-detection dialog and wall-colour matching), 62 use plain
+`getString` and 13 come from XML. Only the six `tilt_shift` strings are Chinese, and they are plain too. Checked
+by code only; not on screen, because that needs auto keystone to run.
+
+The other 28 apps with 15 or more Chinese strings were checked by code only. The most replaceable strings are in
+`doubanfm` (137), `home` (122), `user` (65), `stream.video` (55), `smartaccessories` (44) and `bootwizard`
+(34): services of the Chinese ecosystem (music, account and VIP, cloud backup, curtain, kids mode). None was
+translated. Conclusion: extending the skin to these apps is not worth it; the only way to translate the rest of
+the text without root is to draw over the screen through an accessibility service.
+
 ## Firmware quirks and pitfalls
 
 - **Accessibility services are reset on boot.** Also, if the service's process is killed, it is
@@ -301,6 +416,12 @@ remote is audible in the first ~0.3 s of the stream.
 - **`AF_AK` type 10 no longer starts auto keystone.** The command reaches SystemUI, but the ToF
   measurement doesn't start. Only `ProjectorFocusManager.newAutoKst(9)` works.
 - **The number of the AI picture mode**: reading returns 10, writing requires 16.
+- **A call without an exception doesn't mean the firmware accepted the value.** The `gmpf`
+  managers take a refusal silently. The only reliable check is reading the value back, and the
+  reason for a refusal is in logcat (`XGIMI_ZOOM_CTL`, `GM_DISP_TVCTRL`, `[LDM ERROR]`).
+- **Noise reduction, MEMC, colour temperature, the four sliders and local contrast** are written,
+  but the firmware applies them only in the custom picture mode (3). In the other modes the write
+  is ignored and the read returns the old value.
 - **The `changePictureMode` intent** leaves XGIMI's picture page open behind the video. A direct
   `MstPictureManager` call doesn't.
 - **The time zone** defaults to Asia/Shanghai, and there is no SIM to detect it. `restore.ps1`
@@ -340,7 +461,7 @@ adb shell am broadcast -n com.home.tiles/.AdbCommandReceiver --es gmpf "GmTvMana
 ```
 
 The arguments are integers separated by commas. They are cast to `byte` or `boolean` if the method
-requires it.
+requires it. The class may be given by its full name (`com.xgimi.video.MstPictureManager.getColorTemp`).
 
 Ready-made state snapshots:
 

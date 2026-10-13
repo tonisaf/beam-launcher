@@ -15,6 +15,25 @@ class BeamApp : Application() {
         super.onCreate()
         app = this
         AppLanguage.init(this)
+        removeLegacySpeechData()
+    }
+
+    /** Reclaim the optional model left by versions before 0.4.4 without resetting launcher settings. */
+    private fun removeLegacySpeechData() {
+        val migration = getSharedPreferences("migrations", MODE_PRIVATE)
+        if (migration.getBoolean("speechRemoved", false)) return
+        Thread {
+            val removed = listOf("vosk-ru", "vosk-ru.tmp", "vosk-ru.old").map { name ->
+                val file = java.io.File(filesDir, name)
+                !file.exists() || file.deleteRecursively()
+            } + listOf("vosk-download.zip", "vosk-model.zip").map { name ->
+                val file = java.io.File(cacheDir, name)
+                !file.exists() || file.delete()
+            }
+            getSharedPreferences("settings", MODE_PRIVATE).edit().remove("voiceAssistantEnabled").apply()
+            deleteSharedPreferences("voice")
+            if (removed.all { it }) migration.edit().putBoolean("speechRemoved", true).apply()
+        }.start()
     }
 
     companion object {

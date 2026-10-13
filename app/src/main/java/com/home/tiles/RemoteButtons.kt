@@ -5,7 +5,6 @@ import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 
 /**
@@ -26,8 +25,6 @@ object RemoteButtons {
 
     val actions = mutableStateListOf("", "", "", "")
 
-    /** Which shortcut key was just pressed while the panel was open (-1 none), to point at its row. */
-    val lastPressed = mutableIntStateOf(-1)
 
     fun init(context: Context) {
         if (::prefs.isInitialized) return
@@ -65,16 +62,9 @@ class RemoteButtonActivity : ComponentActivity() {
         RemoteButtons.init(this)
         val index = intent.getIntExtra("index", -1)
         if (index in 0..3) {
-            // With the panel open, a press just points at that button's row in "Кнопки пульта".
-            if (PanelState.open) {
-                RemoteButtons.lastPressed.intValue = index
-            } else {
-                RemoteButtons.perform(this, index) {
-                    if (!PanelOverlay.show()) {
-                        PanelRequests.count.intValue++
-                        startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-                    }
-                }
+            RemoteButtons.perform(this, index) {
+                PanelRequests.count.intValue++
+                startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             }
         }
         finish()

@@ -68,16 +68,8 @@ import androidx.core.content.ContextCompat
 /**
  * Lets the system give us media sessions (granted over adb:
  * `cmd notification allow_listener com.home.tiles/com.home.tiles.MediaListener`).
- *
- * Also the one thing that restarts us after the firmware force-stops Beam for memory (it does so
- * during video playback). A force stop drops [PanelOverlay] from the enabled accessibility
- * services, but the system rebinds this listener right away, so it restores the panel service.
  */
-class MediaListener : NotificationListenerService() {
-    override fun onListenerConnected() {
-        AccessibilityGuard.ensure(this)
-    }
-}
+class MediaListener : NotificationListenerService()
 
 // ---- Now playing ----
 
@@ -224,31 +216,6 @@ private fun queryUsbDrives(context: Context): List<UsbDrive> = runCatching {
         .filter { it.isRemovable && it.state == Environment.MEDIA_MOUNTED }
         .map { UsbDrive(it.uuid ?: it.getDescription(context), it.getDescription(context)) }
 }.getOrDefault(emptyList())
-
-// ---- HDMI ----
-
-/** HDMI inputs with a live signal (a powered-on device on the cable). */
-@Composable
-fun rememberLiveHdmi(): State<List<Xgimi.Input>> {
-    val context = LocalContext.current
-    return produceState(queryLiveHdmi(context)) {
-        val tv = context.getSystemService(TvInputManager::class.java)
-        val callback = object : TvInputManager.TvInputCallback() {
-            override fun onInputStateChanged(inputId: String, state: Int) { value = queryLiveHdmi(context) }
-            override fun onInputAdded(inputId: String) { value = queryLiveHdmi(context) }
-            override fun onInputRemoved(inputId: String) { value = queryLiveHdmi(context) }
-        }
-        tv?.registerCallback(callback, Handler(Looper.getMainLooper()))
-        awaitDispose { tv?.unregisterCallback(callback) }
-    }
-}
-
-private fun queryLiveHdmi(context: Context): List<Xgimi.Input> {
-    val tv = context.getSystemService(TvInputManager::class.java) ?: return emptyList()
-    return Xgimi.hdmiInputs(context).filter {
-        runCatching { tv.getInputState(it.id) }.getOrNull() == TvInputManager.INPUT_STATE_CONNECTED
-    }
-}
 
 // ---- Tile art for the special tiles ----
 

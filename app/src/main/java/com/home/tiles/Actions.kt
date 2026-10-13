@@ -20,23 +20,33 @@ fun Context.launchPackage(pkg: String) {
 
 fun Context.isInstalled(pkg: String) = runCatching { packageManager.getPackageInfo(pkg, 0) }.isSuccess
 
-/** XGIMI has no settings activities: its settings UI and quick panel are overlays drawn by services. */
-private fun Context.startXgimiPanel(action: String): Boolean = runCatching {
-    startService(Intent(action).setPackage(XGIMI_SETTINGS)) != null
-}.getOrDefault(false)
-
 fun Context.openSettings() {
-    if (!startXgimiPanel("com.xgimi.settings.SETTINGS")) {
-        start(Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    if (tryActivity(Intent(Settings.ACTION_SETTINGS))) return
+    // Some TV firmware exposes its stock settings only as an exported service.
+    if (tryStockSettingsService("com.xgimi.settings.SETTINGS")) return
+    for (pkg in listOf("com.android.tv.settings", "com.google.android.tv.settings")) {
+        val intent = packageManager.getLeanbackLaunchIntentForPackage(pkg)
+            ?: packageManager.getLaunchIntentForPackage(pkg)
+        if (intent != null && tryActivity(intent)) return
     }
+    toast(tr(R.string.cant_open))
 }
 
-/** Same panel as the gear key on the remote: network, Bluetooth, input source, focus. */
 fun Context.openQuickPanel() {
-    if (!startXgimiPanel("com.xgimi.misckey.MISCKEY")) openSettings()
+    if (!tryStockSettingsService("com.xgimi.misckey.MISCKEY")) openSettings()
 }
 
-private const val XGIMI_SETTINGS = "com.android.newsettings"
+private fun Context.tryActivity(intent: Intent): Boolean = try {
+    startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    true
+} catch (_: Exception) { false }
+
+/** Opens the manufacturer's own UI; does not control hardware or replace its settings. */
+private fun Context.tryStockSettingsService(action: String): Boolean = try {
+    val intent = Intent(action).setPackage("com.android.newsettings")
+    val service = packageManager.resolveService(intent, 0)?.serviceInfo
+    if (service?.exported == true && service.enabled) startService(intent) != null else false
+} catch (_: Exception) { false }
 
 fun Context.openAppInfo(pkg: String) = start(
     Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:$pkg"))

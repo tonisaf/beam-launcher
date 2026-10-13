@@ -34,10 +34,8 @@ android {
         applicationId = "com.home.tiles"
         minSdk = 26
         targetSdk = 34
-        versionCode = 3
-        versionName = "0.3"
-        // The projector is 32-bit ARM; keeps Vosk/JNA native libraries to the one ABI.
-        ndk { abiFilters += "armeabi-v7a" }
+        versionCode = 16
+        versionName = "0.4.12"
     }
 
     buildTypes {
@@ -82,9 +80,6 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.9.2")
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.palette:palette-ktx:1.0.0")
-    // Offline speech recognition for the remote's voice key.
-    implementation("com.alphacephei:vosk-android:0.3.75@aar")
-    implementation("net.java.dev.jna:jna:5.18.1@aar")
 
     testImplementation("junit:junit:4.13.2")
 }

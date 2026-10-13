@@ -20,24 +20,20 @@
     <!-- Runtime permission, granted over adb: lets us see other apps' non-browsable channels. -->
     <uses-permission android:name="android.permission.READ_TV_LISTINGS" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
-    <uses-permission android:name="android.permission.BLUETOOTH" />
-    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
-    <!-- Bluetooth discovery (BluetoothScan); runtime permission granted over adb. -->
+    <!-- Location permission lets Android disclose the connected Wi-Fi network name. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <!-- Android 12+ lets the user grant only this one; the pair is required for fine location. -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <!-- Granted over adb; see AccessibilityGuard. -->
-    <uses-permission
-        android:name="android.permission.WRITE_SECURE_SETTINGS"
-        tools:ignore="ProtectedPermissions" />
-    <!-- App op granted over adb: the screensaver delay (screen_off_timeout). -->
-    <uses-permission
-        android:name="android.permission.WRITE_SETTINGS"
-        tools:ignore="ProtectedPermissions" />
+    <!-- Only needed for the fallback gallery when firmware has no document picker. -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
-    <!-- Only for MicTestActivity, the remote microphone experiment. -->
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Wi-Fi status displayed by the launcher. -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+
 
     <uses-feature
         android:name="android.software.leanback"
@@ -85,21 +81,6 @@
             </intent-filter>
         </service>
 
-        <!-- Full-screen keystone, size and tilt setup over whatever is running. -->
-        <activity
-            android:name=".KeystoneActivity"
-            android:excludeFromRecents="true"
-            android:exported="false"
-            android:noHistory="true"
-            android:screenOrientation="landscape"
-            android:taskAffinity=""
-            android:theme="@style/Theme.Tiles" />
-
-        <!-- Sleep timer alarms (SleepTimer). -->
-        <receiver
-            android:name=".SleepTimerReceiver"
-            android:exported="false" />
-
         <receiver
             android:name=".AdbCommandReceiver"
             android:exported="true"
@@ -120,46 +101,14 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        <!-- XGIMI's public platform library: real battery level (the Android battery service reports none). -->
-        <uses-library
-            android:name="com.xgimi.api"
-            android:required="false" />
-        <!-- Receives the speech model zip over adb (content write); shell-only via DUMP. -->
-        <provider
-            android:name=".VoiceModelProvider"
-            android:authorities="com.home.tiles.voicemodel"
-            android:exported="true"
-            android:permission="android.permission.DUMP" />
-        <!-- System speech recognition (Vosk) so apps' microphone buttons work; the voice key is push-to-talk. -->
-        <service
-            android:name=".VoskRecognitionService"
-            android:exported="true"
-            android:label="Beam: распознавание речи">
-            <intent-filter>
-                <action android:name="android.speech.RecognitionService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.speech"
-                android:resource="@xml/recognition_service" />
-        </service>
-        <activity
-            android:name=".VoiceSearchActivity"
-            android:excludeFromRecents="true"
-            android:exported="true"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar">
-            <intent-filter>
-                <action android:name="android.speech.action.RECOGNIZE_SPEECH" />
-                <action android:name="android.speech.action.WEB_SEARCH" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
-        <!-- Diagnostic: records the microphone (does the remote's voice reach apps?). Shell-only via DUMP. -->
-        <activity
-            android:name=".MicTestActivity"
-            android:exported="true"
-            android:permission="android.permission.DUMP"
-            android:excludeFromRecents="true"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <provider android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.updates" android:exported="false" android:grantUriPermissions="true">
+            <meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/update_paths" />
+        </provider>
+
+        <!-- Optional read-only battery API on XGIMI; Android reports no battery on this firmware. -->
+        <uses-library android:name="com.xgimi.api" android:required="false" />
         <!-- Started by the stub apps (:stub) when a remote shortcut key is pressed. -->
         <activity
             android:name=".RemoteButtonActivity"
@@ -170,19 +119,5 @@
             android:taskAffinity=""
             android:theme="@android:style/Theme.NoDisplay" />
 
-        <!-- Catches the remote's voice key everywhere and draws the panel over the current app.
-             Enabled over adb (settings put secure enabled_accessibility_services ...). -->
-        <service
-            android:name=".PanelOverlay"
-            android:exported="true"
-            android:label="Beam: панель"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/panel_overlay" />
-        </service>
     </application>
 </manifest>

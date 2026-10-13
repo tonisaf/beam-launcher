@@ -8,32 +8,52 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 /** User-facing launcher settings. Snapshot state, so anything that reads them recomposes on change. */
+const val HOME_SWITCH = "switch"
+const val HOME_GOOGLE_TV = "googletv"
+
 object LauncherSettings {
     private lateinit var prefs: SharedPreferences
 
     private val darkState = mutableStateOf(false)
     private val backgroundState = mutableStateOf(0)
+    private val wallpaperState = mutableStateOf(0L)
+    private val wallpaperDimState = mutableStateOf(25)
     private val soundsState = mutableStateOf(true)
     private val nowPlayingState = mutableStateOf(true)
-    private val usbTileState = mutableStateOf(true)
     private val hdmiTileState = mutableStateOf(true)
-    private val settingsKeyPanelState = mutableStateOf(false)
+    private val usbTileState = mutableStateOf(true)
     private val secondRowState = mutableStateOf(SECOND_ROW_AUTO)
+    private val channelRulesState = mutableStateOf<List<ChannelRule>?>(null)
+    private val homeLayoutState = mutableStateOf(HOME_SWITCH)
     private val xmbColorState = mutableStateOf(-1)
     private val bgAnimationState = mutableStateOf(true)
+    private val welcomeDoneState = mutableStateOf(false)
 
     fun init(context: Context) {
-        // Shared by the launcher activity and the overlay service in the same process.
+        // Shared by launcher activities in the same process.
         if (::prefs.isInitialized) return
         prefs = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        welcomeDoneState.value = prefs.getBoolean("welcomeDone", prefs.all.isNotEmpty())
+        prefs.edit().putBoolean("welcomeDone", welcomeDoneState.value).apply()
         darkState.value = prefs.getBoolean("dark", false)
         backgroundState.value = prefs.getInt("background", 0).coerceIn(Backgrounds.indices)
+        wallpaperState.value = prefs.getLong("wallpaper", 0L)
+        wallpaperDimState.value = prefs.getInt("wallpaperDim", 25).coerceIn(0, 80)
         soundsState.value = prefs.getBoolean("sounds", true)
         nowPlayingState.value = prefs.getBoolean("nowPlaying", true)
-        usbTileState.value = prefs.getBoolean("usbTile", true)
         hdmiTileState.value = prefs.getBoolean("hdmiTile", true)
-        settingsKeyPanelState.value = prefs.getBoolean("settingsKeyPanel", false)
+        usbTileState.value = prefs.getBoolean("usbTile", true)
         secondRowState.value = prefs.getString("secondRow", SECOND_ROW_AUTO) ?: SECOND_ROW_AUTO
+        channelRulesState.value = prefs.getString("channelRules", null)?.let { raw ->
+            runCatching {
+                val array = org.json.JSONArray(raw)
+                List(array.length()) { index ->
+                    val row = array.getJSONObject(index)
+                    ChannelRule(row.getString("key"), row.getString("legacy"), ChannelPosition.valueOf(row.getString("position")))
+                }
+            }.getOrNull()
+        }
+        homeLayoutState.value = prefs.getString("homeLayout", HOME_SWITCH) ?: HOME_SWITCH
         xmbColorState.value = prefs.getInt("xmbColor", -1)
         bgAnimationState.value = prefs.getBoolean("bgAnimation", true)
     }
@@ -42,9 +62,21 @@ object LauncherSettings {
         get() = darkState.value
         set(value) { darkState.value = value; prefs.edit().putBoolean("dark", value).apply() }
 
+    var welcomeDone: Boolean
+        get() = welcomeDoneState.value
+        set(value) { welcomeDoneState.value = value; prefs.edit().putBoolean("welcomeDone", value).apply() }
+
     var background: Int
         get() = backgroundState.value
-        set(value) { backgroundState.value = value; prefs.edit().putInt("background", value).apply() }
+        set(value) { backgroundState.value = value; wallpaper = 0L; prefs.edit().putInt("background", value).apply() }
+
+    var wallpaper: Long
+        get() = wallpaperState.value
+        set(value) { wallpaperState.value = value; prefs.edit().putLong("wallpaper", value).apply() }
+
+    var wallpaperDim: Int
+        get() = wallpaperDimState.value
+        set(value) { wallpaperDimState.value = value.coerceIn(0, 80); prefs.edit().putInt("wallpaperDim", wallpaperDimState.value).apply() }
 
     var sounds: Boolean
         get() = soundsState.value
@@ -54,23 +86,33 @@ object LauncherSettings {
         get() = nowPlayingState.value
         set(value) { nowPlayingState.value = value; prefs.edit().putBoolean("nowPlaying", value).apply() }
 
-    var usbTile: Boolean
-        get() = usbTileState.value
-        set(value) { usbTileState.value = value; prefs.edit().putBoolean("usbTile", value).apply() }
-
-    /** The remote's settings key opens Beam's panel instead of XGIMI's quick settings. */
-    var settingsKeyPanel: Boolean
-        get() = settingsKeyPanelState.value
-        set(value) { settingsKeyPanelState.value = value; prefs.edit().putBoolean("settingsKeyPanel", value).apply() }
-
     var hdmiTile: Boolean
         get() = hdmiTileState.value
         set(value) { hdmiTileState.value = value; prefs.edit().putBoolean("hdmiTile", value).apply() }
+
+    var usbTile: Boolean
+        get() = usbTileState.value
+        set(value) { usbTileState.value = value; prefs.edit().putBoolean("usbTile", value).apply() }
 
     /** Channel key shown under the tiles, or [SECOND_ROW_AUTO] / [SECOND_ROW_OFF]. */
     var secondRow: String
         get() = secondRowState.value
         set(value) { secondRowState.value = value; prefs.edit().putString("secondRow", value).apply() }
+
+    var channelRules: List<ChannelRule>?
+        get() = channelRulesState.value
+        set(value) {
+            channelRulesState.value = value
+            val array = value?.let { rows -> org.json.JSONArray().apply {
+                rows.forEach { put(org.json.JSONObject().put("key", it.key).put("legacy", it.legacyKey).put("position", it.position.name)) }
+            } }
+            prefs.edit().putString("channelRules", array?.toString()).apply()
+        }
+
+    /** The home screen's layout: [HOME_SWITCH] (tiles in a row) or [HOME_GOOGLE_TV] (tabs, channel rows, round icons). */
+    var homeLayout: String
+        get() = homeLayoutState.value
+        set(value) { homeLayoutState.value = value; prefs.edit().putString("homeLayout", value).apply() }
 
     /** XMB colour index into [XmbColors], or -1 for the current month's colour like the PS3. */
     var xmbColor: Int
@@ -96,7 +138,7 @@ object Colors {
     val Accent = Color(0xFF00C3E3)
     val AccentGlow = Color(0xFF7FF0FF)
 
-    val isXmb get() = Backgrounds[LauncherSettings.background].xmb
+    val isXmb get() = LauncherSettings.wallpaper == 0L && Backgrounds[LauncherSettings.background].xmb
 
     fun backgroundBrush(): Brush = presetBrush(Backgrounds[LauncherSettings.background])
 
@@ -128,4 +170,3 @@ val Backgrounds = listOf(
     BackgroundPreset(R.string.bg_lavender, listOf(Color(0xFFEAE3FF), Color(0xFFFAFAFA)), listOf(Color(0xFF1D1830), Color(0xFF3A3060))),
     BackgroundPreset(R.string.bg_xmb, emptyList(), emptyList(), xmb = true),
 )
-

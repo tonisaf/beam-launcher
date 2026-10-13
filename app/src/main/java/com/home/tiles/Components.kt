@@ -98,11 +98,12 @@ fun T(
     color: Color = Colors.Text,
     weight: FontWeight = FontWeight.Normal,
     align: TextAlign = TextAlign.Start,
+    maxLines: Int = 1,
 ) = BasicText(
     text = text,
     modifier = modifier,
     style = TextStyle(color = color, fontSize = size, fontWeight = weight, textAlign = align),
-    maxLines = 1,
+    maxLines = maxLines,
     overflow = TextOverflow.Ellipsis,
 )
 
@@ -137,8 +138,8 @@ fun Modifier.pulseBorder(width: Dp, shape: Shape): Modifier {
 }
 
 /**
- * OK click and OK long-press / Menu key for D-pad focus targets.
- * Handled by hand so a long press that opens a dialog never leaves a stuck press state.
+ * OK click and Menu key for D-pad focus targets.
+ * Holding OK is consumed without opening options or launching the app on release.
  */
 class DpadPress {
     var pressed = false
@@ -163,7 +164,6 @@ fun Modifier.dpadClick(
                     } else if (!longFired && pressed) {
                         longFired = true
                         onPress(false)
-                        onLongClick()
                     }
                 } else if (event.type == KeyEventType.KeyUp) {
                     if (pressed && !longFired) onClick()
@@ -342,12 +342,13 @@ fun NetworkIcon() {
 }
 
 @Composable
-fun OptionsDialog(entry: AppEntry, repo: AppRepository, onDismiss: () -> Unit, onChanged: () -> Unit) {
+fun OptionsDialog(entry: AppEntry, repo: AppRepository, onDismiss: () -> Unit, onChanged: () -> Unit, onMove: () -> Unit) {
     val context = LocalContext.current
     val art by rememberArt(repo, entry)
     val first = remember { FocusRequester() }
     val options = buildList<Pair<String, () -> Unit>> {
         add(tr(R.string.menu_open) to { context.launchApp(entry) })
+        if (!entry.hidden) add(tr(R.string.menu_move) to onMove)
         add((if (entry.pinned) tr(R.string.menu_unpin) else tr(R.string.menu_pin_first)) to { repo.togglePinned(entry.pkg); onChanged() })
         add((if (entry.hidden) tr(R.string.menu_show_home) else tr(R.string.menu_hide_home)) to { repo.toggleHidden(entry.pkg); onChanged() })
         add(tr(R.string.menu_app_info) to { context.openAppInfo(entry.pkg) })

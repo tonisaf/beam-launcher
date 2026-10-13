@@ -7,3 +7,5 @@ local.properties
 local.env
 # APKs that restore.ps1 downloads or you put there
 tools/apks/
+
+skin/build/

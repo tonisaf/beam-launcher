@@ -1,4 +1,8 @@
 ﻿<#
+  LEGACY XGIMI-ONLY SCRIPT. Not a generic Beam installer.
+  It changes manufacturer services and device settings; see docs/installation.en.md for
+  current universal-launcher setup. Preserved for the archived XGIMI integration.
+
   Restores the XGIMI Play 6 setup: the Beam launcher as the home screen, Chinese services off, keyboard,
   permissions, accessibility services, language, time zone and Bluetooth name.
   Safe to run repeatedly; steps whose app is missing are skipped.
@@ -324,14 +328,10 @@ Step "Доступ к медиа («Сейчас играет»)" {
 Step "Каналы приложений (второй ряд)" {
     Check (Adb shell pm grant com.home.tiles android.permission.READ_TV_LISTINGS)
 }
-Step "Системные настройки (восстановление спец. возможностей)" {
-    Check (Adb shell pm grant com.home.tiles android.permission.WRITE_SECURE_SETTINGS)
-}
 Step "Поиск Bluetooth-устройств (местоположение)" {
     Check (Adb shell pm grant com.home.tiles android.permission.ACCESS_FINE_LOCATION)
     Check (Adb shell pm grant com.home.tiles android.permission.ACCESS_COARSE_LOCATION)
 }
-Step "Микрофон пульта (голосовая кнопка)" { Check (Adb shell pm grant com.home.tiles android.permission.RECORD_AUDIO) }
 Step "Время до заставки (screen_off_timeout)" { Check (Adb shell appops set com.home.tiles WRITE_SETTINGS allow) }
 $script:HomeSet = $false
 Step "Домашний экран" {
@@ -343,17 +343,18 @@ Step "Стоковый лаунчер XGIMI ($stockLauncher)" {
     if (-not $script:HomeSet) { throw "Beam не назначен домашним экраном: стоковый лаунчер оставлен включённым" }
     Expect (Adb shell pm disable-user --user 0 $stockLauncher) "disabled"
 }
-
-Write-Host "`n5. Спец. возможности (прошивка сбрасывает их при загрузке, лаунчер потом возвращает сам)" -ForegroundColor Cyan
-Step "Панель Beam (голосовая кнопка и кнопки пульта)" {
-    # Added to the services already enabled (Key Mapper, ...), not replacing them.
-    $component = $beamPanel
-    $current = Adb shell settings get secure enabled_accessibility_services
-    $list = @()
-    if ($current -and $current -ne "null") { $list = @($current -split ':' | Where-Object { $_ }) }
-    if (($list -notcontains $component) -and ($list -notcontains $beamPanelShort)) { $list += $component }
-    Check (Adb shell settings put secure enabled_accessibility_services ($list -join ':'))
-    Check (Adb shell settings put secure accessibility_enabled 1)
+# With several launchers claiming "Home" (ATV Launcher Pro, Google TV's, Launcher Manager, ...) XGIMI's own
+# chooser opens, "Always" is not remembered and Beam does not come up after a reboot. Disabling someone
+# else's launcher is not for the script to decide, so it only warns.
+$homeCandidates = Adb shell cmd package query-activities --brief -a android.intent.action.MAIN -c android.intent.category.HOME
+$otherLaunchers = @($homeCandidates -split "`n" | ForEach-Object { $_.Trim() } |
+    Where-Object { $_ -match '^[\w.]+/\S+$' -and $_ -notmatch '^com\.home\.tiles/' -and $_ -notmatch 'FallbackHome' } |
+    ForEach-Object { ($_ -split '/')[0] } | Select-Object -Unique)
+if ($otherLaunchers.Count -gt 0) {
+    Write-Host "`n  Внимание: на «Домой» претендуют и другие лаунчеры: $($otherLaunchers -join ', ')" -ForegroundColor Yellow
+    Write-Host "  Из-за них после перезагрузки может открываться окно выбора вместо Beam. Если так, отключите их" -ForegroundColor Yellow
+    Write-Host "  (ничего не удаляется): adb shell pm disable-user --user 0 ПАКЕТ  (вернуть: pm enable ПАКЕТ)" -ForegroundColor Yellow
+    Write-Host "  Подробнее: README, «Если что-то не работает»." -ForegroundColor Yellow
 }
 
 Write-Host "`n6. Система" -ForegroundColor Cyan

@@ -10,13 +10,21 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 
-/** Switch-style UI sounds. */
+/** UISFX Minimal UI sounds: hover, select and reaction (CC0 audio). */
 object Sounds {
     private var pool: SoundPool? = null
-    private var nav = 0
-    private var activate = 0
-    private var popup = 0
-    private var lastArrowAt = 0L
+    // UISFX master gain (70%) multiplies each cue's own default volume.
+    private const val MASTER_VOLUME = 0.7f
+    private class Cue(val volume: Float, val cooldownMs: Long = 0) {
+        var sound = 0
+        var stream = 0
+        var lastStartedAt = -cooldownMs
+    }
+    private val nav = Cue(0.12f, cooldownMs = 60)
+    private val activate = Cue(0.20f)
+    private val popup = Cue(0.17f)
+    private val cues = listOf(nav, activate, popup)
+    private var lastArrowAt = -300L
 
     fun init(context: Context) {
         if (pool != null) return
@@ -25,15 +33,17 @@ object Sounds {
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
             .build()
         pool = SoundPool.Builder().setMaxStreams(4).setAudioAttributes(attrs).build().also {
-            nav = it.load(context, R.raw.nav, 1)
-            activate = it.load(context, R.raw.activate, 1)
-            popup = it.load(context, R.raw.popup, 1)
+            nav.sound = it.load(context, R.raw.nav, 1)
+            activate.sound = it.load(context, R.raw.activate, 1)
+            popup.sound = it.load(context, R.raw.popup, 1)
         }
     }
 
     fun release() {
         pool?.release()
         pool = null
+        cues.forEach { it.sound = 0; it.stream = 0; it.lastStartedAt = -it.cooldownMs }
+        lastArrowAt = -300L
     }
 
     /** Called on arrow presses so only user-driven focus moves click, not focus restored on resume. */
@@ -49,8 +59,16 @@ object Sounds {
 
     fun popup() = play(popup)
 
-    private fun play(id: Int) {
-        if (id != 0 && LauncherSettings.sounds) pool?.play(id, 0.7f, 0.7f, 1, 0, 1f)
+    private fun play(cue: Cue) {
+        val player = pool ?: return
+        if (cue.sound == 0 || !LauncherSettings.sounds) return
+        val now = SystemClock.uptimeMillis()
+        if (now - cue.lastStartedAt < cue.cooldownMs) return
+        // Restart the same cue rather than stacking copies on repeated focus events.
+        if (cue.stream != 0) player.stop(cue.stream)
+        val volume = MASTER_VOLUME * cue.volume
+        cue.stream = player.play(cue.sound, volume, volume, 1, 0, 1f)
+        if (cue.stream != 0) cue.lastStartedAt = now
     }
 }
 
