@@ -38,7 +38,7 @@ API XGIMI не обязательны. Необязательный адапте
 
 Скачайте APK из [Releases](https://github.com/tonisaf/beam-launcher/releases) или соберите актуальный исходный код, установите и выберите Beam домашним приложением в настройках Android, если прошивка это позволяет.
 
-**Версии:** v0.4.12 содержит универсальный лаунчер и обновление через GitHub Releases. v0.3 выпущен до этих изменений. Разработка находится в ветке [codex/remove-xgimi](https://github.com/tonisaf/beam-launcher/tree/codex/remove-xgimi); перенос в `main` — [PR #11](https://github.com/tonisaf/beam-launcher/pull/11).
+**Версии:** v0.4.12 содержит универсальный лаунчер и обновление через GitHub Releases. v0.3 выпущен до этих изменений. Актуальный исходный код находится в `main`; переход к универсальному лаунчеру завершён в [PR #11](https://github.com/tonisaf/beam-launcher/pull/11).
 
 ```sh
 adb install -r app-release.apk
@@ -59,11 +59,7 @@ Beam проверяет последний стабильный [GitHub Release]
 
 ## Исходный код
 
-`main` содержит актуальную страницу проекта и документацию. Код универсального лаунчера пока находится в [codex/remove-xgimi](https://github.com/tonisaf/beam-launcher/tree/codex/remove-xgimi), [PR #11](https://github.com/tonisaf/beam-launcher/pull/11) ещё не слит. Для сборки текущего лаунчера переключитесь на эту ветку:
-
-```sh
-git switch codex/remove-xgimi
-```
+Актуальный код и документация находятся в `main`.
 
 ## Сборка
 
