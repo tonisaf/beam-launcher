@@ -11,7 +11,8 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -334,7 +335,11 @@ private fun posterColor(image: ImageBitmap): Color? = runCatching {
 private fun TvCard(item: TvItem, width: Dp, glow: Boolean, onClick: () -> Unit) {
     val context = LocalContext.current
     var focused by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(if (focused) 1.06f else 1f, tween(120), label = "card")
+    val scale by animateFloatAsState(
+        if (focused) 1.06f else 1f,
+        spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
+        label = "card",
+    )
     val poster by produceState<ImageBitmap?>(item.poster?.let { posterCache[it] }, item.poster) {
         item.poster?.let { value = loadPoster(context, it) }
     }

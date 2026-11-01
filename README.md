@@ -6,7 +6,7 @@
 
 [English version](README.en.md)
 
-**Текущий релиз: [Beam 1.0.1](https://github.com/tonisaf/beam-launcher/releases/latest)** · [Скачать APK](https://github.com/tonisaf/beam-launcher/releases/latest/download/app-release.apk) · [Установка](docs/installation.md)
+**Текущий релиз: [Beam 1.0.2](https://github.com/tonisaf/beam-launcher/releases/latest)** · [Скачать APK](https://github.com/tonisaf/beam-launcher/releases/latest/download/app-release.apk) · [Установка](docs/installation.md)
 
 ![Главный экран Beam — раскладка Google TV](docs/screenshots/home-current.png)
 

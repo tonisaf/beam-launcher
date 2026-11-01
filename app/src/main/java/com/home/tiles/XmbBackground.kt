@@ -1,6 +1,9 @@
 package com.home.tiles
 
 import android.graphics.RuntimeShader
+import android.graphics.Bitmap
+import android.graphics.BitmapShader
+import android.graphics.Shader
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
@@ -11,6 +14,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -34,6 +38,8 @@ import kotlin.math.sin
 import kotlin.math.cos
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.geometry.Offset
@@ -60,8 +66,8 @@ fun xmbStops(dark: Boolean): List<Color> {
 
 /**
  * The XMB backdrop: month gradient, translucent waves with bright crests, drifting sparkles.
- * Waves are an AGSL shader (Android 13+), so the GPU does the per-pixel work; older systems get
- * the plain gradient. Animation only runs while the launcher is resumed.
+ * Android 13+ samples CPU-prepared wave/sparkle data through AGSL; older systems draw paths.
+ * Animation only runs while the launcher is resumed.
  */
 @Composable
 fun XmbBackground() {
@@ -116,6 +122,8 @@ private fun XmbWavesLite() {
     }
     val bandPath = remember { android.graphics.Path() }
     val crests = remember { List(3) { Path() } }
+    val density = LocalDensity.current
+    val crestStroke = remember(density) { Stroke(width = with(density) { 1.5.dp.toPx() }) }
     val sparkles = remember {
         val rnd = Random(7)
         List(26) { Sparkle(rnd.nextFloat(), rnd.nextFloat(), rnd.nextFloat() * 6.28f, 0.6f + rnd.nextFloat()) }
@@ -149,7 +157,7 @@ private fun XmbWavesLite() {
                     bandPath.reset()
                     for (s in 0..BAND_STEPS) {
                         val u = s / BAND_STEPS.toFloat()
-                        val y = crest(u, t, i) * BAND_H
+                        val y = xmbCrest(u, t, i) * BAND_H
                         if (s == 0) bandPath.moveTo(0f, y) else bandPath.lineTo(u * BAND_W, y)
                     }
                     for ((width, alpha) in BAND_LAYERS) {
@@ -169,10 +177,10 @@ private fun XmbWavesLite() {
                     path.reset()
                     for (s in 0..BAND_STEPS) {
                         val u = s / BAND_STEPS.toFloat()
-                        val y = crest(u, t, i) * h
+                        val y = xmbCrest(u, t, i) * h
                         if (s == 0) path.moveTo(0f, y) else path.lineTo(u * w, y)
                     }
-                    drawPath(path, Color.White.copy(alpha = 0.5f - 0.12f * i), style = Stroke(width = 1.5.dp.toPx()))
+                    drawPath(path, Color.White.copy(alpha = 0.5f - 0.12f * i), style = crestStroke)
                 }
                 for (p in sparkles) {
                     val twinkle = 0.5f + 0.5f * sin(t * 1.3f * p.speed + p.phase)
@@ -182,14 +190,6 @@ private fun XmbWavesLite() {
                 }
             },
     )
-}
-
-/** Crest height of wave [i] at horizontal position [u] (0..1), as a fraction of the height. Same as the shader. */
-private fun crest(u: Float, t: Float, i: Int): Float {
-    val fi = i.toFloat()
-    return 0.56f + 0.045f * fi +
-        0.075f * sin(u * (2.4f + 0.7f * fi) + t * (0.16f + 0.05f * fi) + fi * 1.9f) +
-        0.03f * sin(u * (6.5f + fi) - t * (0.22f + 0.04f * fi))
 }
 
 private const val BAND_W = 320
@@ -202,21 +202,50 @@ private val BAND_LAYERS = listOf(0.16f to 0.05f, 0.09f to 0.06f, 0.045f to 0.07f
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 private fun XmbWaves() {
-    val shader = remember { RuntimeShader(WAVES_AGSL) }
+    val shader = remember { runCatching { RuntimeShader(WAVES_AGSL) }.getOrNull() }
+    if (shader == null) {
+        XmbWavesLite()
+        return
+    }
     val brush = remember(shader) { ShaderBrush(shader) }
+    var viewport by remember { mutableStateOf(IntSize.Zero) }
+    val data = remember(viewport) { XmbShaderData(viewport.width, viewport.height) }
+    val crests = remember(data) { Bitmap.createBitmap(XmbShaderData.CREST_WIDTH, 2, Bitmap.Config.ARGB_8888) }
+    val sparkles = remember(data) { Bitmap.createBitmap(data.columns, data.rows, Bitmap.Config.ARGB_8888) }
+    val crestInput = remember(crests) {
+        BitmapShader(crests, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply {
+            setFilterMode(BitmapShader.FILTER_MODE_LINEAR)
+        }
+    }
+    val sparkleInput = remember(sparkles) {
+        BitmapShader(sparkles, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).apply {
+            setFilterMode(BitmapShader.FILTER_MODE_NEAREST)
+        }
+    }
     var time by remember { mutableFloatStateOf(0f) }
+    var generation by remember(data) { mutableIntStateOf(0) }
     val animate = LauncherSettings.bgAnimation && rememberResumed()
-    LaunchedEffect(animate) {
+    LaunchedEffect(data, animate) {
+        fun uploadFrame() {
+            data.update(time)
+            crests.setPixels(data.crestPixels, 0, XmbShaderData.CREST_WIDTH, 0, 0, XmbShaderData.CREST_WIDTH, 2)
+            sparkles.setPixels(data.sparklePixels, 0, data.columns, 0, 0, data.columns, data.rows)
+            // Raw inputs preserve the packed numeric bytes without colour-space conversion.
+            shader.setInputBuffer("crests", crestInput)
+            shader.setInputBuffer("sparkles", sparkleInput)
+            shader.setFloatUniform("res", viewport.width.coerceAtLeast(1).toFloat(), viewport.height.coerceAtLeast(1).toFloat())
+            generation++
+        }
+        uploadFrame()
         if (!animate) return@LaunchedEffect
         val start = withFrameNanos { it } - (time * 1e9f).toLong()
         var last = 0L
         while (true) {
-            // Only the draw phase reads `time`, so a tick redraws without recomposing. The waves move
-            // slowly, so ~30 fps is indistinguishable from 60 and halves the work.
             withFrameNanos { now ->
                 if (now - last >= FRAME_NANOS) {
                     last = now
                     time = (now - start) / 1e9f
+                    uploadFrame()
                 }
             }
         }
@@ -225,42 +254,46 @@ private fun XmbWaves() {
     Box(
         Modifier
             .fillMaxSize()
+            .onSizeChanged { viewport = it }
             // Own layer: a tick re-renders only the backdrop, not the tiles drawn above it.
             .graphicsLayer()
             .drawBehind {
-                shader.setFloatUniform("res", size.width, size.height)
-                shader.setFloatUniform("t", time)
-                drawRect(brush)
+                // Observe only the ready-frame counter: uploads redraw without recomposition.
+                if (generation > 0) drawRect(brush)
             },
     )
 }
 
 private const val FRAME_NANOS = 33_000_000L
 
-// Waves: each is a soft translucent band plus a thin bright crest line, drifting at its own pace.
-// Sparkles: one candidate dot per grid cell, most cells empty, each twinkling on its own phase.
+// The frame loop supplies wave heights and cell-relative sparkles. No per-fragment trig or loops.
 private const val WAVES_AGSL = """
 uniform float2 res;
-uniform float t;
+uniform shader crests;
+uniform shader sparkles;
+
+float3 fade(float3 x) {
+    return 1.0 / (1.0 + x + 0.48 * x * x + 0.235 * x * x * x);
+}
+
+float fade(float x) {
+    return 1.0 / (1.0 + x + 0.48 * x * x + 0.235 * x * x * x);
+}
 
 half4 main(float2 p) {
     float2 uv = p / res;
-    float a = 0.0;
-    for (int i = 0; i < 3; i++) {
-        float fi = float(i);
-        float crest = 0.56 + 0.045 * fi
-            + 0.075 * sin(uv.x * (2.4 + 0.7 * fi) + t * (0.16 + 0.05 * fi) + fi * 1.9)
-            + 0.03 * sin(uv.x * (6.5 + fi) - t * (0.22 + 0.04 * fi));
-        float d = uv.y - crest;
-        a += exp(-(d * d) / (0.0030 + 0.0015 * fi)) * 0.10;
-        a += exp(-(d * d) / 0.000018) * (0.42 - 0.1 * fi);
-    }
+    float x = uv.x * 128.0 + 0.5;
+    float3 high = crests.eval(float2(x, 0.5)).rgb;
+    float3 low = crests.eval(float2(x, 1.5)).rgb;
+    float3 heights = (high * 256.0 + low) / 257.0;
+    float3 d = uv.y - heights;
+    float a = dot(fade(d * d / float3(0.0030, 0.0045, 0.0060)), float3(0.10));
+    a += dot(fade(d * d / 0.000018), float3(0.42, 0.32, 0.22));
     float cell = 70.0;
     float2 g = floor(p / cell);
-    float h = fract(sin(dot(g, float2(12.9898, 78.233))) * 43758.5453);
-    float2 c = (g + 0.5 + 0.35 * float2(sin(t * 0.25 + h * 6.28), cos(t * 0.2 + h * 9.0))) * cell;
-    float twinkle = 0.5 + 0.5 * sin(t * 1.3 + h * 40.0);
-    a += exp(-length(p - c) * 0.45) * step(0.9, h) * twinkle * 0.8;
+    float3 sparkle = sparkles.eval(g + 0.5).rgb;
+    float2 c = (g + sparkle.rg) * cell;
+    a += fade(length(p - c) * 0.45) * sparkle.b * 0.8;
     a = clamp(a, 0.0, 0.85);
     return half4(a, a, a, a);
 }

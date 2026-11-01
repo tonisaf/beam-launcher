@@ -5,6 +5,8 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import android.view.KeyEvent as AndroidKeyEvent
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -271,7 +273,11 @@ fun AllAppsArt() {
 @Composable
 fun RoundButton(icon: ImageVector, tint: Color, label: String, onClick: () -> Unit) {
     var focused by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(if (focused) 1.08f else 1f, tween(120), label = "focus")
+    val scale by animateFloatAsState(
+        if (focused) 1.08f else 1f,
+        spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
+        label = "focus",
+    )
     Column(Modifier.width(64.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
             Modifier

@@ -6,7 +6,7 @@ A launcher for Android TVs, projectors and TV boxes, designed for remote control
 
 [Русская версия](README.md)
 
-**Current release: [Beam 1.0.1](https://github.com/tonisaf/beam-launcher/releases/latest)** · [Download APK](https://github.com/tonisaf/beam-launcher/releases/latest/download/app-release.apk) · [Setup](docs/installation.en.md)
+**Current release: [Beam 1.0.2](https://github.com/tonisaf/beam-launcher/releases/latest)** · [Download APK](https://github.com/tonisaf/beam-launcher/releases/latest/download/app-release.apk) · [Setup](docs/installation.en.md)
 
 ![Beam Home — Google TV layout](docs/screenshots/home-current.png)
 

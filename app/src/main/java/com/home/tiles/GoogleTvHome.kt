@@ -2,7 +2,8 @@ package com.home.tiles
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -279,7 +280,11 @@ private fun RoundTile(
     var focused by remember { mutableStateOf(false) }
     var pressed by remember { mutableStateOf(false) }
     val press = remember { DpadPress() }
-    val scale by animateFloatAsState(if (pressed) 0.95f else if (focused) 1.1f else 1f, tween(100), label = "round")
+    val scale by animateFloatAsState(
+        if (pressed) 0.95f else if (focused) 1.1f else 1f,
+        spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
+        label = "round",
+    )
     // An app shows its own launcher icon, and its glow is that icon's colour; HDMI and USB keep their art.
     val app = (item as? RowItem.App)?.entry
     val icon by produceState<TileArt?>(app?.let { repo.cachedRoundIcon(it) }, app?.pkg, app?.updated) {

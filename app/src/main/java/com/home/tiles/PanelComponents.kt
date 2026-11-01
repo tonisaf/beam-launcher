@@ -2,6 +2,8 @@ package com.home.tiles
 
 import android.view.KeyEvent as AndroidKeyEvent
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -135,7 +137,11 @@ internal fun Chip(
 @Composable
 internal fun Swatch(brush: Brush, selected: Boolean, onClick: () -> Unit) {
     var focused by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(if (focused) 1.1f else 1f, tween(120), label = "swatch")
+    val scale by animateFloatAsState(
+        if (focused) 1.1f else 1f,
+        spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
+        label = "swatch",
+    )
     val shape = RoundedCornerShape(14.dp)
     Box(
         Modifier
@@ -306,7 +312,11 @@ internal fun Selector(label: String, value: String, modifier: Modifier, onChange
 @Composable
 internal fun ColorDot(color: Color, selected: Boolean, onClick: () -> Unit) {
     var focused by remember { mutableStateOf(false) }
-    val scale by animateFloatAsState(if (focused) 1.15f else 1f, tween(120), label = "dot")
+    val scale by animateFloatAsState(
+        if (focused) 1.15f else 1f,
+        spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
+        label = "dot",
+    )
     Box(
         Modifier
             .size(46.dp)
