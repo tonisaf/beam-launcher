@@ -79,7 +79,7 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.activity:activity-compose:1.9.2")
     implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.palette:palette-ktx:1.0.0")
+    implementation("androidx.palette:palette-ktx:1.1.0")
 
     testImplementation("junit:junit:4.13.2")
 }
